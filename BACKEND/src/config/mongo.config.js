@@ -1,12 +1,8 @@
 import mongoose from "mongoose";
-import { use } from "react";
 
 const connectDB = async () => {
     try {
-        await mongoose.connect(process.env.MONGO_URL, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
+        await mongoose.connect(process.env.MONGO_URI);
         console.log("Database connected");
     } catch (error) {
         console.log("Database connection failed");

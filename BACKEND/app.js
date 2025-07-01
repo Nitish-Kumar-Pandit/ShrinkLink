@@ -1,18 +1,24 @@
 import express from 'express';
 const app = express();
 import { nanoid } from 'nanoid';
+import dotenv from "dotenv"; 
+import short_url from './src/routes/short_url.route.js';
+import UrlSchema from './src/models/shorturl.model.js';
+import connectDB from './src/config/mongo.config.js';
+import { redirectFromShortUrl } from './src/controller/short_url.controller.js';
+dotenv.config("./.env"); 
 
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
  
-app.post("/api/create", (req, res)=>{
-    const {url} = req.body;
-    console.log(url);
-    res.send(nanoid(7));
-})
+app.use("/api/create", short_url)
+
+app.get("/:id", redirectFromShortUrl);
 
 app.listen(3000, () =>{
+    connectDB();
+    console.log("Connected to MongoDB");
     console.log('Server is running on http://localhost:3000');
 })
 
