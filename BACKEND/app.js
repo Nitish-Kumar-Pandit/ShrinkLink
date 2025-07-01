@@ -7,6 +7,8 @@ import UrlSchema from './src/models/shorturl.model.js';
 import connectDB from './src/config/mongo.config.js';
 import { redirectFromShortUrl } from './src/controller/short_url.controller.js';
 dotenv.config("./.env"); 
+import cors from 'cors';
+app.use(cors());
 
 
 app.use(express.json());

@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/* Custom glassmorphic styles */
+@supports (backdrop-filter: blur(10px)) {
+  .backdrop-blur-xl {
+    backdrop-filter: blur(24px);
+  }
+  .backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+  }
+}
+
+/* Fallback for browsers that don't support backdrop-filter */
+@supports not (backdrop-filter: blur(10px)) {
+  .backdrop-blur-xl {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+  .backdrop-blur-sm {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Selection styles */
+::selection {
+  background-color: rgba(147, 51, 234, 0.3);
+  color: white;
+}
