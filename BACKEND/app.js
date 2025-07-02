@@ -11,7 +11,10 @@ dotenv.config("./.env");
 import cors from 'cors';
 import { attachUser } from './src/utils/attachUser.js';
 import cookieParser from 'cookie-parser';
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}));
 
 
 app.use(express.json());

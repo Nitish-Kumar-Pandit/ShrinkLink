@@ -14,7 +14,8 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true
+        required: true,
+        select: false
     },
     avatar: {
         type: String,
@@ -34,6 +35,14 @@ userSchema.virtual('avatarUrl').get(function() {
 // Ensure virtual fields are included in JSON output
 userSchema.set('toJSON', { virtuals: true });
 userSchema.set('toObject', { virtuals: true });
+
+userSchema.set('toJSON', {
+    transform: function(doc, ret){
+        delete ret.password;
+        delete ret.__v;
+        return ret;
+    }
+})
 
 // Pre-save middleware to hash password and set Gravatar
 userSchema.pre('save', async function(next) {

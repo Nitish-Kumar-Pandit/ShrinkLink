@@ -1,4 +1,5 @@
 import { loginUserService, registerUserService } from "../services/auth.service.js";
+import { cookieOptions } from "../config/config.js";
 
 export const registerUser = async (req, res) => {
     try {
@@ -15,11 +16,11 @@ export const registerUser = async (req, res) => {
         const result = await registerUserService(name, email, password);
 
         // Set JWT token as HTTP-only cookie
-        res.cookie('token', result.token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        res.cookie('accessToken', result.token, {
+            ...cookieOptions,
+            maxAge: 24 * 60 * 60 * 1000, // 24 hours
+            path: '/',
+            domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : 'localhost'
         });
 
         // Return user data (without password)
@@ -40,6 +41,24 @@ export const registerUser = async (req, res) => {
     }
 }
 
+// Test endpoint to check cookies
+export const testCookie = async (req, res) => {
+    // Set a simple test cookie
+    res.cookie('testCookie', 'testValue', {
+        httpOnly: false, // Make it visible in browser for testing
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 1000, // 1 hour
+        path: '/'
+    });
+
+    res.json({
+        success: true,
+        message: 'Test cookie set',
+        cookies: req.cookies
+    });
+};
+
 export const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -57,10 +76,10 @@ export const loginUser = async (req, res) => {
 
         // Set JWT token as HTTP-only cookie
         res.cookie("accessToken", token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+            ...cookieOptions,
+            maxAge: 24 * 60 * 60 * 1000, // 24 hours
+            path: '/',
+            domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : 'localhost'
         });
 
         res.status(200).json({
@@ -73,6 +92,27 @@ export const loginUser = async (req, res) => {
         res.status(401).json({
             success: false,
             message: error.message || "Login failed"
+        });
+    }
+}
+
+export const logoutUser = async (req, res) => {
+    try {
+        // Clear the access token cookie
+        res.clearCookie('accessToken', {
+            ...cookieOptions,
+            maxAge: 0
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Logout successful"
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({
+            success: false,
+            message: "Logout failed"
         });
     }
 }

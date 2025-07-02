@@ -1,4 +1,4 @@
-import { createUser, findUserByEmail } from "../dao/user.dao.js";
+import { createUser, findUserByEmail, findUserByEmailAndPassword } from "../dao/user.dao.js";
 import { signToken } from "../utils/helper.js";
 
 export const registerUserService = async (name, email, password) => {
@@ -14,13 +14,14 @@ export const registerUserService = async (name, email, password) => {
 }
 
 export const loginUserService = async (email, password) => {
-    const user = await findUserByEmail(email);
+    const user = await findUserByEmailAndPassword(email);
 
     if (!user) {
         throw new Error("Invalid email or password");
     }
 
     const isPasswordValid = await user.comparePassword(password);
+
     if (!isPasswordValid) {
         throw new Error("Invalid email or password");
     }
