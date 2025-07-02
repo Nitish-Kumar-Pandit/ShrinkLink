@@ -17,9 +17,20 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(cookieParser)
+// Debug middleware
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
+});
+
+app.use(cookieParser());
 app.use(attachUser);
  
+// Test route
+app.get("/", (req, res) => {
+    res.json({ message: "Server is working!" });
+});
+
 app.use("/api/auth", auth_routes)
 app.use("/api/create", short_url)
 
