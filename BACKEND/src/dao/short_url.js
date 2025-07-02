@@ -14,3 +14,7 @@ export const saveUrl = async (shortUrl, longUrl, userId) => {
 export const getShortUrl = async (id) =>{
     return await UrlSchema.findOneAndUpdate({ short_url: id }, {$inc: {clicks: 1}});
 }
+
+export const getCustomUrl = async (slug) =>{
+    return await UrlSchema.findOne({ short_url: slug });
+}
