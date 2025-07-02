@@ -38,6 +38,7 @@ const LoginForm = ({state}) => {
     }
 
     try {
+        
       // Use Redux thunk for login
       const result = await dispatch(loginUser({
         email: formData.email,
@@ -46,7 +47,7 @@ const LoginForm = ({state}) => {
 
       if (loginUser.fulfilled.match(result)) {
         console.log('Login successful:', result.payload);
-        navigate({ to: '/dashboard' });
+        navigate({ to: '/home' });
         // Reset form
         setFormData({ email: '', password: '' });
       } else {

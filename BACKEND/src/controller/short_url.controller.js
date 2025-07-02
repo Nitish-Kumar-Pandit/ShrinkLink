@@ -9,7 +9,7 @@ export const createShortUrl = async (req, res) => {
     }else{
         shortUrl = await shortUrlServiceWithoutUser(data.url);
     }
-    res.status(200).json({shortUrl: process.env.APP_URL + shortUrl});
+    res.status(200).json({shortUrl: `${process.env.APP_URL}/${shortUrl}`});
 }
 
 export const redirectFromShortUrl = async (req, res) => {
@@ -21,5 +21,5 @@ export const redirectFromShortUrl = async (req, res) => {
 export const createCustomUrl = async (req, res) => {
     const {url, slug} = req.body;
     const shortUrl = await shortUrlServiceWithoutUser(url, slug);
-    res.status(200).json({shortUrl: process.env.APP_URL + shortUrl});
+    res.status(200).json({shortUrl: `${process.env.APP_URL}/${shortUrl}`});
 }

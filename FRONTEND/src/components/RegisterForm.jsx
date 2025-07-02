@@ -55,6 +55,7 @@ const RegisterForm = ({state = () => {}}) => {
     }
 
     try {
+
       // Use Redux thunk for registration
       const result = await dispatch(registerUser({
         name: formData.name,
@@ -64,7 +65,7 @@ const RegisterForm = ({state = () => {}}) => {
 
       if (registerUser.fulfilled.match(result)) {
         console.log('Registration successful:', result.payload);
-        navigate({ to: '/dashboard' });
+        navigate({ to: '/home' });
         // Reset form
         setFormData({ name: '', email: '', password: '', confirmPassword: '' });
       } else {
