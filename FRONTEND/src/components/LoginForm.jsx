@@ -47,7 +47,7 @@ const LoginForm = ({state}) => {
 
       if (loginUser.fulfilled.match(result)) {
         console.log('Login successful:', result.payload);
-        navigate({ to: '/home' });
+        navigate({ to: '/dashboard' });
         // Reset form
         setFormData({ email: '', password: '' });
       } else {

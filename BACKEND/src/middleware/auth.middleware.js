@@ -1,30 +1,33 @@
-import { verifyToken } from "../utils/helper";
+import { verifyToken } from "../utils/helper.js";
 import { findUserById } from "../dao/user.dao.js";
 
 export const authmiddleware = async (req, res, next) => {
-
-    const token = req.cookies.accessToken;
-    if (!token) {
-        return res.status(401).json({
-            success: false,
-            message: "Unauthorized"
-        });
-    }
     try {
+        const token = req.cookies.accessToken;
+
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: "Access token not found"
+            });
+        }
+
         const decoded = verifyToken(token);
-        const user = await findUserById(decoded);
+        const user = await findUserById(decoded.id);
+
         if (!user) {
             return res.status(401).json({
                 success: false,
-                message: "Unauthorized"
+                message: "User not found"
             });
         }
+
         req.user = user;
         next();
     } catch(error) {
         return res.status(401).json({
             success: false,
-            message: "Unauthorized"
+            message: "Invalid or expired token"
         });
     }
 }

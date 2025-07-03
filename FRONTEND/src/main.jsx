@@ -8,7 +8,12 @@ import { Provider } from 'react-redux'
 import { store } from './store/store.js'
 
 const queryClient = new QueryClient()
-const router = createRouter({ routeTree })
+const router = createRouter({ routeTree,
+  context: {
+    queryClient,
+    store
+  }
+ })
 
 createRoot(document.getElementById('root')).render(
   <Provider store={store}>

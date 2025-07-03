@@ -55,6 +55,8 @@ const RegisterForm = ({state = () => {}}) => {
     }
 
     try {
+      console.log('Starting registration process...');
+      console.log('Form data:', { name: formData.name, email: formData.email });
 
       // Use Redux thunk for registration
       const result = await dispatch(registerUser({
@@ -63,19 +65,23 @@ const RegisterForm = ({state = () => {}}) => {
         password: formData.password
       }));
 
+      console.log('Registration result:', result);
+
       if (registerUser.fulfilled.match(result)) {
         console.log('Registration successful:', result.payload);
-        navigate({ to: '/home' });
+        navigate({ to: '/dashboard' });
         // Reset form
         setFormData({ name: '', email: '', password: '', confirmPassword: '' });
       } else {
         // Handle registration error
         const errorMessage = result.payload?.message || result.payload || 'Registration failed';
+        console.error('Registration failed with error:', errorMessage);
         setError(errorMessage);
-        console.error('Registration failed:', result.payload);
+        console.error('Full error result:', result.payload);
       }
     } catch (error) {
-      setError('Registration failed. Please try again.');
+      console.error('Caught error during registration:', error);
+      setError(`Registration failed: ${error.message || 'Please try again.'}`);
       console.error('Registration failed:', error);
     } finally {
       setIsLoading(false);

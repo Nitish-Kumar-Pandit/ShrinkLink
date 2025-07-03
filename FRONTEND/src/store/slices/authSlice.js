@@ -5,7 +5,7 @@ export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -13,6 +13,14 @@ export const loginUser = createAsyncThunk(
         credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
+
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        return rejectWithValue('Server returned invalid response format');
+      }
 
       const data = await response.json();
 
@@ -22,6 +30,7 @@ export const loginUser = createAsyncThunk(
 
       return data;
     } catch (error) {
+      console.error('Login error:', error);
       return rejectWithValue(error.message || 'Network error');
     }
   }
@@ -31,7 +40,10 @@ export const registerUser = createAsyncThunk(
   'auth/registerUser',
   async ({ name, email, password }, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:3000/api/auth/register', {
+      console.log('Attempting to register user:', { name, email });
+      console.log('Making request to: /api/auth/register');
+
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,7 +52,11 @@ export const registerUser = createAsyncThunk(
         body: JSON.stringify({ name, email, password }),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (!response.ok) {
         return rejectWithValue(data.message || 'Registration failed');
@@ -48,7 +64,11 @@ export const registerUser = createAsyncThunk(
 
       return data;
     } catch (error) {
-      return rejectWithValue(error.message || 'Network error');
+      console.error('Registration error details:', error);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      return rejectWithValue(`Failed to fetch: ${error.message}`);
     }
   }
 );
@@ -57,7 +77,7 @@ export const logoutUser = createAsyncThunk(
   'auth/logoutUser',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:3000/api/auth/logout', {
+      const response = await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
       });
