@@ -111,23 +111,23 @@ export const createShortUrl = async (req, res) => {
 export const redirectFromShortUrl = async (req, res) => {
     try {
         const { id } = req.params;
-        console.log('🔍 Redirect request for ID:', id);
+        console.log('🔍 REDIRECT: Looking for ID:', id);
 
         const url = await getShortUrl(id);
-        console.log('🔍 Database result:', url ? 'Found' : 'Not found');
+        console.log('🔍 REDIRECT: Database result:', url ? 'Found' : 'Not found');
 
         if (!url || !url.full_url) {
-            console.log('❌ URL not found or missing full_url');
+            console.log('❌ REDIRECT: URL not found or missing full_url');
             return res.status(404).json({
                 success: false,
                 message: "Short URL not found"
             });
         }
 
-        console.log('✅ Redirecting to:', url.full_url);
+        console.log('✅ REDIRECT: Redirecting to:', url.full_url);
         res.redirect(url.full_url);
     } catch (error) {
-        console.error('Error redirecting from short URL:', error);
+        console.error('❌ REDIRECT: Error:', error);
         res.status(500).json({
             success: false,
             message: "Internal server error"

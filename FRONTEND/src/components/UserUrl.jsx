@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { getUserUrls, updateUrlStats, toggleFavorite } from '../store/slices/urlSlice'
+import { getUserUrls, updateUrlStats, toggleFavorite, clearError } from '../store/slices/urlSlice'
+import { getTimeRemaining, formatExpirationDate, formatDate } from '../utils/timeUtils'
 import { CardSkeleton } from './LoadingSpinner'
 import FavoriteUrls from './FavoriteUrls'
 
@@ -10,9 +11,12 @@ const UserUrl = () => {
   const { isAuthenticated } = useSelector((state) => state.auth)
   const [copiedId, setCopiedId] = useState(null)
   const [clickedId, setClickedId] = useState(null)
+  const [testLink, setTestLink] = useState(null)
+  const [testLoading, setTestLoading] = useState(false)
 
   useEffect(() => {
     if (isAuthenticated) {
+      dispatch(clearError()) // Clear any previous errors
       dispatch(getUserUrls())
     }
   }, [dispatch, isAuthenticated])
@@ -27,18 +31,7 @@ const UserUrl = () => {
     }
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Just now'
 
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return 'Just now'
-
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  }
 
   const formatClicks = (count) => {
     return count === 1 ? '1 click' : `${count} clicks`
@@ -74,18 +67,7 @@ const UserUrl = () => {
     }
   }
 
-  const formatExpirationDate = (expiresAt) => {
-    if (!expiresAt) return null
 
-    const date = new Date(expiresAt)
-    if (isNaN(date.getTime())) return null
-
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  }
 
   const handleUrlClick = async (urlData) => {
     // Check if URL is expired
@@ -129,6 +111,30 @@ const UserUrl = () => {
       await dispatch(toggleFavorite(urlId)).unwrap()
     } catch (error) {
       console.error('Failed to toggle favorite:', error)
+    }
+  }
+
+  const handleCreateTestLink = async () => {
+    setTestLoading(true)
+    try {
+      const response = await fetch('http://localhost:3001/test-link', {
+        method: 'GET',
+      })
+      const data = await response.json()
+
+      if (response.ok) {
+        setTestLink(data)
+        // Refresh URLs to show the new test link
+        if (isAuthenticated) {
+          dispatch(getUserUrls())
+        }
+      } else {
+        console.error('Failed to create test link:', data.message)
+      }
+    } catch (error) {
+      console.error('Error creating test link:', error)
+    } finally {
+      setTestLoading(false)
     }
   }
 
@@ -286,6 +292,12 @@ const UserUrl = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       Expires {formatExpirationDate(url.expiresAt)}
+                    </div>
+                    <div className="flex items-center text-xs text-gray-500">
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {/* <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /> */}
+                      </svg>
+                      {getTimeRemaining(url.expiresAt)}
                     </div>
                   </div>
                 </div>

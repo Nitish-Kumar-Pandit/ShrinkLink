@@ -51,11 +51,7 @@ app.use((req, res, next) => {
 app.use(cookieParser());
 app.use(attachUser);
 
-// Debug middleware for all requests
-app.use((req, res, next) => {
-    console.log(`📥 ${req.method} ${req.path}`);
-    next();
-});
+
 
 
  
@@ -134,6 +130,43 @@ app.get("/test-nanoid", async (req, res) => {
     }
 });
 
+// Test link creation and redirect functionality
+app.get("/test-link", async (req, res) => {
+    try {
+        console.log('🧪 Creating test link...');
+
+        // Import required modules
+        const { shortUrlServiceWithoutUser } = await import('./src/services/short_url.service.js');
+
+        // Create a test short URL
+        const testUrl = 'https://www.google.com';
+        const shortCode = await shortUrlServiceWithoutUser(testUrl, '127.0.0.1', '1d');
+        const fullShortUrl = `${process.env.APP_URL}/${shortCode}`;
+
+        console.log('✅ Test link created:', { shortCode, fullShortUrl, originalUrl: testUrl });
+
+        res.json({
+            message: 'Test link created successfully!',
+            originalUrl: testUrl,
+            shortCode: shortCode,
+            fullShortUrl: fullShortUrl,
+            testInstructions: [
+                `1. Click this link to test: ${fullShortUrl}`,
+                '2. It should redirect you to Google',
+                '3. Check the database with /debug/urls to see the entry',
+                '4. The click count should increment each time you visit'
+            ],
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('❌ Error creating test link:', error);
+        res.status(500).json({
+            error: error.message,
+            message: 'Failed to create test link'
+        });
+    }
+});
+
 // Test database query for specific URL
 app.get("/test-find/:id", async (req, res) => {
     try {
@@ -170,11 +203,36 @@ app.use("/api/auth", auth_routes)
 app.use("/api/create", short_url)
 app.get("/api/urls", getUserUrlsController)
 
-// Short URL redirect route
-app.get("/:id", (req, res, next) => {
-    console.log('🔍 Redirect route hit with ID:', req.params.id);
-    next();
-}, redirectFromShortUrl);
+
+
+// Short URL redirect route - MUST be last to avoid conflicts with other routes
+app.get("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Sanitize input - trim whitespace and handle URL encoding
+        const sanitizedId = decodeURIComponent(id.trim());
+
+        // Import the DAO function directly
+        const { getShortUrl } = await import('./src/dao/short_url.js');
+        const url = await getShortUrl(sanitizedId);
+
+        if (!url || !url.full_url) {
+            return res.status(404).json({
+                success: false,
+                message: "Short URL not found"
+            });
+        }
+
+        res.redirect(url.full_url);
+    } catch (error) {
+        console.error('Error in redirect route:', error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+});
 
 
 

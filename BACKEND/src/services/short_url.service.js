@@ -35,7 +35,7 @@ export const shortUrlServiceWithUser = async (url, userId, slug = null, expirati
     const shortUrl = slug || generateNanoId(4);
     const exist = await getCustomUrl(slug);
     if(exist){
-        throw new Error("URL already exists");
+        throw new Error(`Custom URL '${slug}' already exists. Please choose a different custom URL.`);
     }
     const expiresAt = calculateExpirationDate(expiration);
     await saveUrl(shortUrl, url, userId, null, expiresAt);

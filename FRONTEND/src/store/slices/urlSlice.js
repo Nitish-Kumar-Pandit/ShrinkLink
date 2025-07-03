@@ -18,7 +18,7 @@ export const createShortUrl = createAsyncThunk(
 
       console.log('📤 Request body:', requestBody);
 
-      const response = await fetch('http://localhost:3001/api/create', {
+      const response = await fetch('http://localhost:3000/api/create/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -50,7 +50,7 @@ export const getUserUrls = createAsyncThunk(
   'url/getUserUrls',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:3001/api/urls', {
+      const response = await fetch('http://localhost:3000/api/urls', {
         method: 'GET',
         credentials: 'include',
       });
@@ -73,7 +73,7 @@ export const toggleFavorite = createAsyncThunk(
   'url/toggleFavorite',
   async (urlId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/create/favorite/${urlId}`, {
+      const response = await fetch(`http://localhost:3000/api/create/favorite/${urlId}`, {
         method: 'PATCH',
         credentials: 'include',
       });
@@ -110,7 +110,8 @@ const initialState = {
   urls: [],
   currentShortUrl: null,
   isLoading: false,
-  error: null,
+  error: null, // For URL loading errors
+  createError: null, // For URL creation errors
   stats: {
     totalUrls: 0,
     totalClicks: 0,
@@ -127,6 +128,16 @@ const urlSlice = createSlice({
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    clearCreateError: (state) => {
+      state.createError = null;
+    },
+    setCreateError: (state, action) => {
+      state.createError = action.payload;
+    },
+    clearAllErrors: (state) => {
+      state.error = null;
+      state.createError = null;
     },
     clearCurrentUrl: (state) => {
       state.currentShortUrl = null;
@@ -149,30 +160,50 @@ const urlSlice = createSlice({
     },
     incrementAnonymousUsage: (state) => {
       state.anonymousUsage.linksCreated += 1;
-      // Save to localStorage
+      const today = new Date().toDateString();
+      // Save to localStorage with current date
       localStorage.setItem('anonymousLinksCreated', state.anonymousUsage.linksCreated.toString());
+      localStorage.setItem('anonymousLinksDate', today);
     },
     loadAnonymousUsage: (state) => {
       const saved = localStorage.getItem('anonymousLinksCreated');
-      if (saved) {
-        const savedCount = parseInt(saved, 10) || 0;
-        // If saved count exceeds new limit, reset it
-        if (savedCount > state.anonymousUsage.maxLinks) {
+      const savedDate = localStorage.getItem('anonymousLinksDate');
+      const today = new Date().toDateString(); // Get current date as string (e.g., "Thu Jul 04 2025")
+
+      if (saved && savedDate) {
+        // Check if the saved date is different from today
+        if (savedDate !== today) {
+          // Date has changed, reset the count
           state.anonymousUsage.linksCreated = 0;
           localStorage.setItem('anonymousLinksCreated', '0');
+          localStorage.setItem('anonymousLinksDate', today);
         } else {
-          state.anonymousUsage.linksCreated = savedCount;
+          // Same date, load the saved count
+          const savedCount = parseInt(saved, 10) || 0;
+          // If saved count exceeds new limit, reset it
+          if (savedCount > state.anonymousUsage.maxLinks) {
+            state.anonymousUsage.linksCreated = 0;
+            localStorage.setItem('anonymousLinksCreated', '0');
+          } else {
+            state.anonymousUsage.linksCreated = savedCount;
+          }
         }
+      } else {
+        // No saved data or missing date, initialize with current date
+        state.anonymousUsage.linksCreated = parseInt(saved, 10) || 0;
+        localStorage.setItem('anonymousLinksDate', today);
       }
     },
     resetAnonymousUsage: (state) => {
       state.anonymousUsage.linksCreated = 0;
       localStorage.removeItem('anonymousLinksCreated');
+      localStorage.removeItem('anonymousLinksDate');
     },
     refreshAllAnonymousLinks: (state) => {
       // Reset all anonymous usage tracking
       state.anonymousUsage.linksCreated = 0;
       localStorage.removeItem('anonymousLinksCreated');
+      localStorage.removeItem('anonymousLinksDate');
       // Clear current short URL if it exists
       state.currentShortUrl = null;
     },
@@ -180,6 +211,7 @@ const urlSlice = createSlice({
       // Force reset to ensure proper sync with new limits
       state.anonymousUsage.linksCreated = 0;
       localStorage.removeItem('anonymousLinksCreated');
+      localStorage.removeItem('anonymousLinksDate');
       // Also clear current short URL to start fresh
       state.currentShortUrl = null;
       state.error = null;
@@ -190,18 +222,18 @@ const urlSlice = createSlice({
       // Create short URL cases
       .addCase(createShortUrl.pending, (state) => {
         state.isLoading = true;
-        state.error = null;
+        state.createError = null;
       })
       .addCase(createShortUrl.fulfilled, (state, action) => {
         state.isLoading = false;
         console.log('✅ Redux: Setting currentShortUrl to:', action.payload.shortUrl);
         state.currentShortUrl = action.payload.shortUrl;
         // Note: URLs list will be refreshed by getUserUrls action after creation
-        state.error = null;
+        state.createError = null;
       })
       .addCase(createShortUrl.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.createError = action.payload;
       })
       // Get user URLs cases
       .addCase(getUserUrls.pending, (state) => {
@@ -238,6 +270,9 @@ const urlSlice = createSlice({
 
 export const {
   clearError,
+  clearCreateError,
+  setCreateError,
+  clearAllErrors,
   clearCurrentUrl,
   addUrl,
   updateUrlStats,

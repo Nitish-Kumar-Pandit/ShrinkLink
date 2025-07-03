@@ -30,36 +30,32 @@ export const saveUrl = async (shortUrl, longUrl, userId, clientIP, expiresAt) =>
 }
 
 export const getShortUrl = async (id) =>{
-    console.log('🔍 DAO: Searching for short_url:', id);
+    // Sanitize input - trim whitespace and handle encoding
+    const sanitizedId = decodeURIComponent(id.trim());
 
     // First find the URL without updating clicks to check expiration
-    const url = await UrlSchema.findOne({ short_url: id });
+    // Use case-insensitive search to handle case sensitivity issues
+    const url = await UrlSchema.findOne({
+        short_url: { $regex: new RegExp(`^${sanitizedId}$`, 'i') }
+    });
 
     if (!url) {
-        console.log('🔍 DAO: URL not found in database');
         return null;
     }
-
-    console.log('🔍 DAO: Found URL, checking expiration...');
-    console.log('🔍 DAO: expiresAt:', url.expiresAt);
-    console.log('🔍 DAO: current time:', new Date());
 
     // Check if URL has expired
     if (url.expiresAt && new Date() > url.expiresAt) {
-        console.log('🔍 DAO: URL has expired');
         return null;
     }
 
-    console.log('🔍 DAO: URL is valid, incrementing clicks');
-
     // URL is valid, increment clicks and return
+    // Use the exact short_url from database for the update (preserves original case)
     const result = await UrlSchema.findOneAndUpdate(
-        { short_url: id },
+        { short_url: url.short_url },
         { $inc: { clicks: 1 } },
         { new: true } // Return the updated document
     );
 
-    console.log('🔍 DAO: Returning result with full_url:', result?.full_url);
     return result;
 }
 

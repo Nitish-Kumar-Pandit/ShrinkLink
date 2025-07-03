@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { updateUrlStats, toggleFavorite } from '../store/slices/urlSlice'
+import { getTimeRemaining, formatExpirationDate, formatDate } from '../utils/timeUtils'
 
 const FavoriteUrls = () => {
   const dispatch = useDispatch()
@@ -21,24 +22,9 @@ const FavoriteUrls = () => {
     }
   }
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
 
-  const formatExpirationDate = (expiresAt) => {
-    if (!expiresAt) return null
-    const date = new Date(expiresAt)
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
+
+
 
   const formatClicks = (count) => {
     return count === 1 ? '1 click' : `${count} clicks`
@@ -194,7 +180,7 @@ const FavoriteUrls = () => {
                     <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Expires {formatExpirationDate(url.expiresAt)}
+                    Expires {formatExpirationDate(url.expiresAt)} {getTimeRemaining(url.expiresAt)}
                   </div>
                 </div>
               </div>

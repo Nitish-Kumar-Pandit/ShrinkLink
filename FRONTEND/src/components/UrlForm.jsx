@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { createShortUrl, getUserUrls, incrementAnonymousUsage, resetAnonymousUsage } from '../store/slices/urlSlice.js'
+import { createShortUrl, getUserUrls, incrementAnonymousUsage, resetAnonymousUsage, clearCreateError, setCreateError } from '../store/slices/urlSlice.js'
 
 // import { createShortUrl } from '../api/shortUrl.api'
 import { useSelector, useDispatch } from 'react-redux';
@@ -15,12 +15,12 @@ const UrlForm = () => {
 
   const [url, setUrl] = useState("")
   const [copied, setCopied] = useState(false)
-  const [error, setError] = useState('')
+
   const [customSlug, setCustomSlug] = useState('')
   const [expiration, setExpiration] = useState('14d') // Default to 14 days
   const [qrGenerated, setQrGenerated] = useState(false)
   const {isAuthenticated} = useSelector((state) => state.auth)
-  const {currentShortUrl, isLoading, anonymousUsage} = useSelector((state) => state.url)
+  const {currentShortUrl, isLoading, anonymousUsage, createError} = useSelector((state) => state.url)
 
   // Debug logging
   useEffect(() => {
@@ -33,6 +33,9 @@ const UrlForm = () => {
   }, [currentShortUrl, isLoading, anonymousUsage, isAuthenticated]);
 
   useEffect(() => {
+    // Clear any previous errors when component mounts or auth state changes
+    dispatch(clearCreateError());
+
     // Only reset anonymous usage count, but preserve currentShortUrl
     if (!isAuthenticated) {
       // Clear localStorage for usage tracking only
@@ -71,7 +74,7 @@ const UrlForm = () => {
       }
     } catch (error) {
       console.error('Error generating QR code:', error);
-      setError('Failed to generate QR code. Please try again.');
+      console.error('Failed to generate QR code. Please try again.');
     }
   }, [currentShortUrl]);
 
@@ -86,12 +89,50 @@ const UrlForm = () => {
     }
   };
 
+  const handleTestLink = () => {
+    if (currentShortUrl) {
+      window.open(currentShortUrl, '_blank', 'noopener,noreferrer')
+    }
+  }
+
+  const handleGenerateQR = () => {
+    console.log('📱 Generate QR clicked, currentShortUrl:', currentShortUrl, 'hasCanvas:', !!canvasRef.current);
+    if (currentShortUrl) {
+      // Always ensure QR section is visible first, then generate
+      setQrGenerated(true);
+
+      // Wait for DOM to update and canvas to be available
+      setTimeout(() => {
+        if (canvasRef.current) {
+          console.log('✅ Generating QR code...');
+          generateQRCode();
+        } else {
+          console.log('❌ Canvas still not ready after timeout');
+          console.error('QR code canvas not ready. Please try again.');
+        }
+      }, 50);
+    } else {
+      console.log('❌ No currentShortUrl available for QR');
+      console.error('Please create a short URL first before generating QR code');
+    }
+  }
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(currentShortUrl);
+    setCopied(true);
+
+    // Reset the copied state after 2 seconds
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  }
+
 
 
 
   const handleSubmit = async () => {
     if (!url.trim()) {
-      setError('Please enter a valid URL');
+      dispatch(setCreateError('Please enter a valid URL'));
       return;
     }
 
@@ -101,7 +142,7 @@ const UrlForm = () => {
       return;
     }
 
-    setError('');
+    dispatch(clearCreateError());
 
     try {
       // Prepare the payload - include customSlug and expiration (expiration is now always required)
@@ -114,6 +155,9 @@ const UrlForm = () => {
       }
 
       await dispatch(createShortUrl(payload)).unwrap();
+
+      // Clear any previous errors on successful creation
+      dispatch(clearCreateError());
 
       // Track anonymous usage
       if (!isAuthenticated) {
@@ -133,20 +177,12 @@ const UrlForm = () => {
         // Redirect to login page instead of showing error
         navigate({ to: '/auth' });
       } else {
-        setError(error || 'Failed to create short URL. Please try again.');
+        dispatch(setCreateError(error || 'Failed to create short URL. Please try again.'));
       }
     }
   }
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(currentShortUrl);
-    setCopied(true);
 
-    // Reset the copied state after 2 seconds
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
-  }
 
   return (
     <div className="space-y-6">
@@ -162,7 +198,7 @@ const UrlForm = () => {
               value={url}
               onInput={(event) => {
                 setUrl(event.target.value);
-                if (error) setError(''); // Clear error when user starts typing
+                if (createError) dispatch(clearCreateError()); // Clear error when user starts typing
               }}
               placeholder="https://example.com/your-very-long-url-here"
               required
@@ -226,13 +262,16 @@ const UrlForm = () => {
         </div>
         
 
-        {error && (
+        {createError && (
           <div className="mt-4 bg-red-50 border-l-4 border-red-400 text-red-700 px-6 py-4 rounded-lg shadow-sm">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-3 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 mr-3 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="font-medium">Error Generating Link</span>
+              <div>
+                <span className="font-medium block">Error Generating Link</span>
+                <span className="text-sm mt-1 block">{createError}</span>
+              </div>
             </div>
           </div>
         )}
@@ -279,7 +318,15 @@ const UrlForm = () => {
 
             {/* Short URL Display */}
             <div className="mb-8">
-              <label className="block text-sm font-semibold text-gray-800 mb-3">🔗 Your Shortened URL</label>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-semibold text-gray-800">🔗 Your Shortened URL</label>
+                <div className="flex items-center text-sm text-gray-500">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Expires in: {expiration === '5h' ? '5 hours' : expiration === '1d' ? '1 day' : expiration === '7d' ? '7 days' : '14 days'}
+                </div>
+              </div>
               <div className="flex items-center bg-white rounded-xl p-4 border-2 border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
                 <div className="flex-1 mr-4">
                   <div className="text-blue-600 font-mono text-lg font-semibold break-all hover:text-blue-800 cursor-pointer"
@@ -318,66 +365,69 @@ const UrlForm = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-3">
-
+              {/* Test Link Button */}
               <button
-                onClick={() => {
-                  console.log('📱 Generate QR clicked, currentShortUrl:', currentShortUrl, 'hasCanvas:', !!canvasRef.current);
-                  if (currentShortUrl) {
-                    // Always ensure QR section is visible first, then generate
-                    setQrGenerated(true);
+                onClick={handleTestLink}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-xl hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Test Link
+              </button>
 
-                    // Wait for DOM to update and canvas to be available
-                    setTimeout(() => {
-                      if (canvasRef.current) {
-                        console.log('✅ Generating QR code...');
-                        generateQRCode();
-                      } else {
-                        console.log('❌ Canvas still not ready after timeout');
-                        setError('QR code canvas not ready. Please try again.');
-                      }
-                    }, 50);
-                  } else {
-                    console.log('❌ No currentShortUrl available for QR');
-                    setError('Please create a short URL first before generating QR code');
-                  }
-                }}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-8 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 flex items-center justify-center font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 mx-auto"
+              {/* Generate QR Code Button */}
+              <button
+                onClick={handleGenerateQR}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-xl hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                 </svg>
-                📱 Generate QR Code
+                Generate QR Code
               </button>
             </div>
 
-            {/* QR Code Display */}
-            {qrGenerated && (
-              <div className="mt-8 text-center border-t-2 border-green-300 pt-8">
-                <div className="mb-6">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-2">📱 QR Code</h4>
-                  <p className="text-sm text-gray-600">Scan with your phone to instantly access the link</p>
-                </div>
-                <div className="flex justify-center mb-6">
-                  <div className="bg-white p-6 rounded-2xl shadow-lg border-2 border-gray-200 hover:shadow-xl transition-shadow duration-200">
-                    <canvas ref={canvasRef} />
-                  </div>
-                </div>
-                <button
-                  onClick={downloadQRCode}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-8 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center mx-auto font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            {/* Additional Info for Anonymous Users */}
+            {!isAuthenticated && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-700 flex items-center">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  💾 Download QR Code
-                </button>
+                  Sign up to create unlimited URLs and track analytics!
+                </p>
               </div>
             )}
-
-            {/* Hidden canvas for QR generation - always present */}
-            {!qrGenerated && <canvas ref={canvasRef} style={{ display: 'none' }} />}
           </div>
         )}
+
+        {/* QR Code Display */}
+        {qrGenerated && (
+          <div className="mt-8 text-center border-t-2 border-green-300 pt-8">
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold text-gray-800 mb-2">📱 QR Code</h4>
+              <p className="text-sm text-gray-600">Scan with your phone to instantly access the link</p>
+            </div>
+            <div className="flex justify-center mb-6">
+              <div className="bg-white p-6 rounded-2xl shadow-lg border-2 border-gray-200 hover:shadow-xl transition-shadow duration-200">
+                <canvas ref={canvasRef} />
+              </div>
+            </div>
+            <button
+              onClick={downloadQRCode}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 px-8 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center mx-auto font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              💾 Download QR Code
+            </button>
+          </div>
+        )}
+
+        {/* Hidden canvas for QR generation - always present */}
+        {!qrGenerated && <canvas ref={canvasRef} style={{ display: 'none' }} />}
 
 
 
