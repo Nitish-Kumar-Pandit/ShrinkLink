@@ -5,12 +5,9 @@ import { validationResult } from 'express-validator';
 
 export const createShortUrl = async (req, res) => {
     try {
-        console.log('🚀 createShortUrl called with:', req.body);
-
         // Check for validation errors
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            console.log('❌ Validation errors:', errors.array());
             return res.status(400).json({
                 success: false,
                 message: 'Validation failed',
@@ -56,8 +53,6 @@ export const createShortUrl = async (req, res) => {
                 clientIP = clientIP.substring(7);
             }
 
-            console.log('Detected client IP:', clientIP);
-
             const anonymousCount = await getAnonymousUrlCount(clientIP);
             const ANONYMOUS_LIMIT = 3;
 
@@ -93,14 +88,12 @@ export const createShortUrl = async (req, res) => {
                 break;
         }
 
-        console.log('✅ Short URL created:', { shortUrl, fullShortUrl, originalUrl: data.url, status, expiration });
         res.status(200).json({
             shortUrl: fullShortUrl,
             status: status,
             expiration: expiration
         });
     } catch (error) {
-        console.error('Error creating short URL:', error);
         res.status(500).json({
             success: false,
             message: error.message || "Failed to create short URL"
@@ -111,23 +104,18 @@ export const createShortUrl = async (req, res) => {
 export const redirectFromShortUrl = async (req, res) => {
     try {
         const { id } = req.params;
-        console.log('🔍 REDIRECT: Looking for ID:', id);
 
         const url = await getShortUrl(id);
-        console.log('🔍 REDIRECT: Database result:', url ? 'Found' : 'Not found');
 
         if (!url || !url.full_url) {
-            console.log('❌ REDIRECT: URL not found or missing full_url');
             return res.status(404).json({
                 success: false,
                 message: "Short URL not found"
             });
         }
 
-        console.log('✅ REDIRECT: Redirecting to:', url.full_url);
         res.redirect(url.full_url);
     } catch (error) {
-        console.error('❌ REDIRECT: Error:', error);
         res.status(500).json({
             success: false,
             message: "Internal server error"
@@ -170,7 +158,6 @@ export const toggleFavorite = async (req, res) => {
             isFavorite: url.isFavorite
         });
     } catch (error) {
-        console.error('Error toggling favorite:', error);
         res.status(500).json({
             success: false,
             message: "Internal server error"
@@ -221,10 +208,57 @@ export const getUserUrlsController = async (req, res) => {
             stats
         });
     } catch (error) {
-        console.error('Error fetching user URLs:', error);
         res.status(500).json({
             success: false,
             message: "Failed to fetch URLs"
+        });
+    }
+}
+
+export const getUserStatsController = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Authentication required"
+            });
+        }
+
+        const urls = await getUserUrls(req.user._id);
+
+        // Calculate comprehensive stats
+        const totalUrls = urls.length;
+        const totalClicks = urls.reduce((sum, url) => sum + url.clicks, 0);
+        const activeUrls = urls.filter(url => url.status === 'active').length;
+        const expiredUrls = urls.filter(url => url.status === 'expired').length;
+        const expiringUrls = urls.filter(url => url.status === 'expiring').length;
+
+        // Calculate click rate (percentage of URLs that have been clicked)
+        const clickedUrls = urls.filter(url => url.clicks > 0).length;
+        const clickRate = totalUrls > 0 ? Math.round((clickedUrls / totalUrls) * 100) : 0;
+
+        // Calculate average clicks per URL
+        const avgClicksPerUrl = totalUrls > 0 ? Math.round(totalClicks / totalUrls) : 0;
+
+        const stats = {
+            totalUrls,
+            totalClicks,
+            activeUrls,
+            expiredUrls,
+            expiringUrls,
+            clickRate,
+            avgClicksPerUrl,
+            clickedUrls
+        };
+
+        res.status(200).json({
+            success: true,
+            stats
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch stats"
         });
     }
 }
@@ -256,7 +290,6 @@ export const getAnonymousUsageController = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error fetching anonymous usage:', error);
         res.status(500).json({
             success: false,
             message: "Failed to fetch usage data"
@@ -278,7 +311,6 @@ export const refreshAnonymousLinksController = async (req, res) => {
             deletedCount: result.deletedCount
         });
     } catch (error) {
-        console.error('Error refreshing anonymous links:', error);
         res.status(500).json({
             success: false,
             message: "Failed to refresh anonymous links"

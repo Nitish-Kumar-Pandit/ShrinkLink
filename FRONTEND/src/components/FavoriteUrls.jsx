@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { updateUrlStats, toggleFavorite } from '../store/slices/urlSlice'
 import { getTimeRemaining, formatExpirationDate, formatDate } from '../utils/timeUtils'
@@ -8,9 +8,14 @@ const FavoriteUrls = () => {
   const { urls } = useSelector((state) => state.url)
   const [copiedId, setCopiedId] = useState(null)
   const [clickedId, setClickedId] = useState(null)
+  const [isVisible, setIsVisible] = useState(false)
 
   // Filter only favorite URLs
   const favoriteUrls = urls.filter(url => url.isFavorite)
+
+  useEffect(() => {
+    setIsVisible(true)
+  }, [])
 
   const handleCopy = async (shortUrl, id) => {
     try {
@@ -31,21 +36,21 @@ const FavoriteUrls = () => {
   }
 
   const getStatusBadge = (status) => {
-    const baseClasses = "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+    const baseClasses = "inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-300"
 
     switch (status) {
       case 'expired':
         return (
-          <span className={`${baseClasses} bg-red-100 text-red-800`}>
-            <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></span>
+          <span className={`${baseClasses} bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-800`}>
+            <span className="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></span>
             Expired
           </span>
         )
       case 'expiring_soon':
         return (
-          <span className={`${baseClasses} bg-yellow-100 text-yellow-800 animate-pulse`} 
+          <span className={`${baseClasses} bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800 animate-pulse`}
                 style={{ animationDuration: '2s' }}>
-            <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1"></span>
+            <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
             Expiring Soon
           </span>
         )
@@ -107,50 +112,59 @@ const FavoriteUrls = () => {
 
   if (favoriteUrls.length === 0) {
     return (
-      <div className="bg-white/80 backdrop-blur-sm p-8 rounded-xl shadow-lg border border-white/20">
+      <div className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-12 rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/20 transition-all duration-1000 ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+      }`}>
         <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+          <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-red-100 to-pink-100 dark:from-red-900/30 dark:to-pink-900/30 rounded-2xl flex items-center justify-center shadow-lg">
+            <svg className="w-10 h-10 text-red-500 dark:text-red-400" fill="currentColor" viewBox="0 0 24 24">
               <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </div>
-          <p className="text-gray-500">Click the heart icon on any URL to add it to your favorites!</p>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">No Favorites Yet</h3>
+          <p className="text-gray-600 dark:text-gray-300 text-lg">Click the heart icon on any URL to add it to your favorites!</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/20">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+    <div className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/20 transition-all duration-1000 ${
+      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+    }`}>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
               <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Favorite URLs</h2>
-            <p className="text-sm text-gray-500">{favoriteUrls.length} favorite{favoriteUrls.length !== 1 ? 's' : ''}</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">❤️ Favorite URLs</h2>
+            <p className="text-gray-600 dark:text-gray-300">{favoriteUrls.length} favorite{favoriteUrls.length !== 1 ? 's' : ''}</p>
           </div>
         </div>
       </div>
 
-      <div className="space-y-4">
-        {favoriteUrls.map((url) => (
-          <div key={url.id} className="bg-white/60 backdrop-blur-sm p-4 rounded-lg border border-white/30 hover:bg-white/80 transition-all duration-300">
-            <div className="flex items-center justify-between">
+      <div className="space-y-6">
+        {favoriteUrls.map((url, index) => (
+          <div
+            key={url.id}
+            className="bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm p-6 rounded-2xl border border-white/30 dark:border-gray-600/30 hover:from-white dark:hover:from-gray-700 hover:to-white/90 dark:hover:to-gray-700/90 transition-all duration-300 shadow-lg hover:shadow-xl group"
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div className="flex-1 min-w-0">
                 {/* Short URL with Status Badge */}
-                <div className="mb-2 flex items-center space-x-3">
+                <div className="mb-3 flex items-center space-x-3">
                   <button
                     onClick={() => handleUrlClick(url)}
                     disabled={url.status === 'expired'}
-                    className={`text-lg font-medium transition-colors duration-200 truncate ${
+                    className={`text-xl font-bold transition-all duration-200 truncate group-hover:scale-105 ${
                       url.status === 'expired'
-                        ? 'text-gray-400 cursor-not-allowed'
-                        : 'text-blue-600 hover:text-blue-800'
-                    }`}
+                        ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                        : 'text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300'
+                    } ${clickedId === url.id ? 'animate-pulse' : ''}`}
                     title={url.status === 'expired' ? "URL has expired" : `Click to visit: ${url.shortUrl}`}
                   >
                     {url.shortUrl}
@@ -162,9 +176,9 @@ const FavoriteUrls = () => {
                 </div>
 
                 {/* Original URL */}
-                <div className="mb-2">
-                  <p className="text-sm text-gray-600 truncate" title={url.full_url}>
-                    {url.full_url}
+                <div className="mb-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 truncate bg-gray-50 dark:bg-gray-600 px-3 py-2 rounded-lg" title={url.full_url}>
+                    <span className="font-medium">→</span> {url.full_url}
                   </p>
                 </div>
 

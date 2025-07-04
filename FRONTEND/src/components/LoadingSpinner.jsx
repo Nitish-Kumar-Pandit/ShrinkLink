@@ -76,8 +76,8 @@ export const SkeletonLoader = ({ lines = 3, className = '' }) => {
     <div className={`animate-pulse space-y-3 ${className}`}>
       {Array.from({ length: lines }).map((_, index) => (
         <div key={index} className="space-y-2">
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></div>
         </div>
       ))}
     </div>
@@ -89,16 +89,16 @@ export const CardSkeleton = ({ count = 1 }) => {
   return (
     <div className="space-y-4">
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className="bg-white/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/20 animate-pulse">
+        <div key={index} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/20 dark:border-gray-700/20 animate-pulse">
           <div className="flex items-center justify-between">
             <div className="flex-1 space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4"></div>
+              <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/2"></div>
+              <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/4"></div>
             </div>
             <div className="flex space-x-2">
-              <div className="h-8 w-16 bg-gray-200 rounded"></div>
-              <div className="h-8 w-8 bg-gray-200 rounded"></div>
+              <div className="h-8 w-16 bg-gray-200 dark:bg-gray-600 rounded"></div>
+              <div className="h-8 w-8 bg-gray-200 dark:bg-gray-600 rounded"></div>
             </div>
           </div>
         </div>

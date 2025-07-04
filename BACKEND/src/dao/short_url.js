@@ -102,8 +102,18 @@ export const getUserUrls = async (userId) => {
 
 export const getAnonymousUrlCount = async (clientIP) => {
     if (!clientIP) return 0;
+
+    // Get start and end of today in UTC
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
     return await UrlSchema.countDocuments({
         clientIP: clientIP,
-        user: { $exists: false }
+        user: { $exists: false },
+        createdAt: {
+            $gte: startOfDay,
+            $lt: endOfDay
+        }
     });
 }

@@ -129,10 +129,19 @@ shortUrlSchema.statics.findActiveByShortUrl = function(shortUrl) {
 };
 
 shortUrlSchema.statics.getAnonymousCount = function(clientIP) {
+    // Get start and end of today in UTC
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
     return this.countDocuments({
         clientIP: clientIP,
         user: { $exists: false },
-        isActive: true
+        isActive: true,
+        createdAt: {
+            $gte: startOfDay,
+            $lt: endOfDay
+        }
     });
 };
 

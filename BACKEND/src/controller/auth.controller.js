@@ -30,10 +30,16 @@ export const registerUser = async (req, res) => {
             success: true,
             message: "User registered successfully",
             token: result.token,
-            user: userWithoutPassword
+            user: {
+                id: userWithoutPassword._id,
+                username: userWithoutPassword.username,
+                email: userWithoutPassword.email,
+                avatar: userWithoutPassword.avatar,
+                createdAt: userWithoutPassword.createdAt,
+                avatarUrl: userWithoutPassword.avatarUrl
+            }
         });
     } catch (error) {
-        console.error('Registration error:', error);
         res.status(400).json({
             success: false,
             message: error.message || "Registration failed"
@@ -88,11 +94,12 @@ export const loginUser = async (req, res) => {
                 id: user._id,
                 username: user.username,
                 email: user.email,
-                avatar: user.avatar
+                avatar: user.avatar,
+                createdAt: user.createdAt,
+                avatarUrl: user.avatarUrl
             }
         });
     } catch (error) {
-        console.error('Login error:', error);
         res.status(401).json({
             success: false,
             message: error.message || "Login failed"
@@ -113,7 +120,6 @@ export const logoutUser = async (req, res) => {
             message: "Logout successful"
         });
     } catch (error) {
-        console.error('Logout error:', error);
         res.status(500).json({
             success: false,
             message: "Logout failed"

@@ -5,8 +5,6 @@ export const createShortUrl = createAsyncThunk(
   'url/createShortUrl',
   async ({ url, customSlug, expiration }, { rejectWithValue }) => {
     try {
-      console.log('🚀 Frontend: Making API call to create short URL', { url, customSlug, expiration });
-
       // Prepare the request body - rename customSlug to slug for backend compatibility
       const requestBody = { url };
       if (customSlug) {
@@ -15,8 +13,6 @@ export const createShortUrl = createAsyncThunk(
       if (expiration) {
         requestBody.expiration = expiration;
       }
-
-      console.log('📤 Request body:', requestBody);
 
       const response = await fetch('http://localhost:3000/api/create/', {
         method: 'POST',
@@ -27,19 +23,14 @@ export const createShortUrl = createAsyncThunk(
         body: JSON.stringify(requestBody),
       });
 
-      console.log('📥 Response status:', response.status);
       const data = await response.json();
-      console.log('📥 Response data:', data);
 
       if (!response.ok) {
-        console.log('❌ API call failed:', data.message);
         return rejectWithValue(data.message || 'Failed to create short URL');
       }
 
-      console.log('✅ API call successful:', data);
       return data;
     } catch (error) {
-      console.error('❌ Network error:', error);
       return rejectWithValue(error.message || 'Network error');
     }
   }
@@ -62,6 +53,52 @@ export const getUserUrls = createAsyncThunk(
       }
 
       return data;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+// Async thunk for getting user stats
+export const getUserStats = createAsyncThunk(
+  'url/getUserStats',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch('http://localhost:3000/api/stats', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(data.message || 'Failed to fetch stats');
+      }
+
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message || 'Network error');
+    }
+  }
+);
+
+// Async thunk for fetching real anonymous usage from backend
+export const fetchAnonymousUsage = createAsyncThunk(
+  'url/fetchAnonymousUsage',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch('http://localhost:3000/api/create/anonymous-usage', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(data.message || 'Failed to fetch anonymous usage');
+      }
+
+      return data.usage;
     } catch (error) {
       return rejectWithValue(error.message || 'Network error');
     }
@@ -91,19 +128,35 @@ export const toggleFavorite = createAsyncThunk(
   }
 );
 
-// Migration: Reset localStorage if it has old data with higher limits
-const migrateAnonymousUsage = () => {
+// Migration: Load anonymous usage with date checking
+const loadInitialAnonymousUsage = () => {
   const saved = localStorage.getItem('anonymousLinksCreated');
-  if (saved) {
-    const savedCount = parseInt(saved, 10) || 0;
-    // If saved count is higher than new limit (3), completely reset it
-    if (savedCount > 3) {
-      localStorage.removeItem('anonymousLinksCreated');
+  const savedDate = localStorage.getItem('anonymousLinksDate');
+  const today = new Date().toDateString();
+
+  if (saved && savedDate) {
+    // Check if the saved date is different from today
+    if (savedDate !== today) {
+      // Date has changed, reset the count
+      localStorage.setItem('anonymousLinksCreated', '0');
+      localStorage.setItem('anonymousLinksDate', today);
       return 0;
+    } else {
+      // Same date, load the saved count
+      const savedCount = parseInt(saved, 10) || 0;
+      // If saved count exceeds new limit, reset it
+      if (savedCount > 3) {
+        localStorage.setItem('anonymousLinksCreated', '0');
+        return 0;
+      }
+      return savedCount;
     }
-    return savedCount;
+  } else {
+    // No saved data or missing date, initialize with current date
+    const count = parseInt(saved, 10) || 0;
+    localStorage.setItem('anonymousLinksDate', today);
+    return count > 3 ? 0 : count;
   }
-  return 0;
 };
 
 const initialState = {
@@ -115,9 +168,15 @@ const initialState = {
   stats: {
     totalUrls: 0,
     totalClicks: 0,
+    activeUrls: 0,
+    expiredUrls: 0,
+    expiringUrls: 0,
+    clickRate: 0,
+    avgClicksPerUrl: 0,
+    clickedUrls: 0
   },
   anonymousUsage: {
-    linksCreated: migrateAnonymousUsage(),
+    linksCreated: loadInitialAnonymousUsage(),
     maxLinks: 3,
   },
 };
@@ -226,7 +285,6 @@ const urlSlice = createSlice({
       })
       .addCase(createShortUrl.fulfilled, (state, action) => {
         state.isLoading = false;
-        console.log('✅ Redux: Setting currentShortUrl to:', action.payload.shortUrl);
         state.currentShortUrl = action.payload.shortUrl;
         // Note: URLs list will be refreshed by getUserUrls action after creation
         state.createError = null;
@@ -250,6 +308,20 @@ const urlSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload;
       })
+      // Get user stats cases
+      .addCase(getUserStats.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(getUserStats.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.stats = action.payload.stats || state.stats;
+        state.error = null;
+      })
+      .addCase(getUserStats.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
       // Toggle favorite cases
       .addCase(toggleFavorite.pending, (state) => {
         state.error = null;
@@ -263,6 +335,18 @@ const urlSlice = createSlice({
         state.error = null;
       })
       .addCase(toggleFavorite.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+      // Fetch anonymous usage cases
+      .addCase(fetchAnonymousUsage.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(fetchAnonymousUsage.fulfilled, (state, action) => {
+        state.anonymousUsage.linksCreated = action.payload.current;
+        state.anonymousUsage.maxLinks = action.payload.limit;
+        state.error = null;
+      })
+      .addCase(fetchAnonymousUsage.rejected, (state, action) => {
         state.error = action.payload;
       });
   },

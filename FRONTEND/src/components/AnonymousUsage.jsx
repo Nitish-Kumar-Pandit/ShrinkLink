@@ -1,11 +1,20 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
+import React, { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from '@tanstack/react-router';
+import { fetchAnonymousUsage } from '../store/slices/urlSlice.js';
 
 const AnonymousUsage = () => {
+  const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state) => state.auth);
   const { anonymousUsage } = useSelector((state) => state.url);
   const navigate = useNavigate();
+
+  // Load anonymous usage from backend on component mount
+  useEffect(() => {
+    if (!isAuthenticated) {
+      dispatch(fetchAnonymousUsage());
+    }
+  }, [dispatch, isAuthenticated]);
 
   // Calculate usage directly from Redux state
   const usage = {
@@ -22,6 +31,8 @@ const AnonymousUsage = () => {
   const handleSignInClick = () => {
     navigate({ to: '/auth' });
   };
+
+
 
   return (
     <div className="bg-gradient-to-r from-gray-900/5 to-gray-800/5 backdrop-blur-sm border border-gray-200/50 rounded-lg p-4 mb-6">
@@ -59,6 +70,8 @@ const AnonymousUsage = () => {
           }
         </div>
       )}
+
+
     </div>
   );
 };

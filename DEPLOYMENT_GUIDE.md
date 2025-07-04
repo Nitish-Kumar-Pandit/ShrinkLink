@@ -121,7 +121,7 @@ services:
       - NODE_ENV=production
       - MONGO_URI=mongodb://admin:password@mongodb:27017/shrinklink?authSource=admin
       - JWT_SECRET=your-jwt-secret
-      - FRONTEND_URL=http://localhost:3001
+      - FRONTEND_URL=http://localhost:3000
     ports:
       - "3000:3000"
     depends_on:

@@ -1,0 +1,19 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background with rounded corners -->
+  <rect width="16" height="16" rx="4" ry="4" fill="url(#gradient)" />
+  
+  <!-- Chain link icon -->
+  <path d="M6.914 5.086a2 2 0 00-2.828 0l-2 2a2 2 0 102.828 2.828l.551-.55m-.379-2.45a2 2 0 002.828 0l2-2a2 2 0 00-2.828-2.828l-.55.55" 
+        stroke="white" 
+        stroke-width="1.2" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        transform="translate(3, 3)" />
+</svg>
