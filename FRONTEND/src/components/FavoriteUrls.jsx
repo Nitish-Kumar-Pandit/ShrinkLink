@@ -150,7 +150,7 @@ const FavoriteUrls = () => {
         {favoriteUrls.map((url, index) => (
           <div
             key={url.id}
-            className="bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-700/90 dark:to-gray-700/70 backdrop-blur-sm p-6 rounded-2xl border border-white/30 dark:border-gray-600/30 hover:from-white dark:hover:from-gray-700 hover:to-white/90 dark:hover:to-gray-700/90 transition-all duration-300 shadow-lg hover:shadow-xl group"
+            className="bg-gradient-to-r from-white/90 to-white/70 dark:from-gray-800/90 dark:to-gray-800/80 backdrop-blur-sm p-6 rounded-2xl border border-white/30 dark:border-gray-600/30 hover:from-white dark:hover:from-gray-900 hover:to-white/90 dark:hover:to-gray-800/80 transition-all duration-300 shadow-lg hover:shadow-xl group"
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -227,8 +227,8 @@ const FavoriteUrls = () => {
                     disabled={url.status === 'expired'}
                     className={`inline-flex items-center justify-center w-10 h-10 rounded-lg backdrop-blur-sm transition-all duration-200 ${
                       url.status === 'expired'
-                        ? 'bg-gray-300/20 text-gray-400 border border-gray-300/30 cursor-not-allowed'
-                        : 'bg-blue-500/20 text-blue-700 border border-blue-300/30 hover:bg-blue-500/30'
+                        ? 'bg-gray-200/20 text-gray-400 border border-gray-500/30 cursor-not-allowed'
+                        : 'bg-blue-800/10 text-blue-700 border border-blue-500/30 hover:bg-blue-800/20'
                     }`}
                     title={url.status === 'expired' ? "URL has expired" : "Visit URL"}
                   >
@@ -240,7 +240,7 @@ const FavoriteUrls = () => {
                   {/* Remove from Favorites Button */}
                   <button
                     onClick={() => handleToggleFavorite(url.id)}
-                    className="inline-flex items-center justify-center w-10 h-10 rounded-lg backdrop-blur-sm transition-all duration-200 bg-red-500/20 text-red-700 border border-red-300/30 hover:bg-red-500/30"
+                    className="inline-flex items-center justify-center w-10 h-10 rounded-lg backdrop-blur-sm transition-all duration-200 bg-red-800/20 text-red-700 border border-red-500/30 hover:bg-red-800/30"
                     title="Remove from favorites"
                   >
                     <svg className="w-5 h-5" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,7 +254,7 @@ const FavoriteUrls = () => {
                     className={`inline-flex items-center justify-center w-10 h-10 rounded-lg backdrop-blur-sm transition-all duration-200 ${
                       copiedId === url.id
                         ? 'bg-green-500/20 text-green-700 border border-green-300/30'
-                        : 'bg-gray-500/20 text-gray-700 border border-gray-300/30 hover:bg-gray-500/30'
+                        : 'bg-gray-900/20 text-gray-700 border border-gray-500/30 hover:bg-gray-700/30'
                     }`}
                     title="Copy URL"
                   >
