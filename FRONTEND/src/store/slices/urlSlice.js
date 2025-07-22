@@ -5,16 +5,16 @@ export const createShortUrl = createAsyncThunk(
   'url/createShortUrl',
   async ({ url, customSlug, expiration }, { rejectWithValue }) => {
     try {
-      // Prepare the request body - rename customSlug to customUrl for backend compatibility
-      const requestBody = { originalUrl: url };
+      // Prepare the request body - match backend expectations
+      const requestBody = { url: url };
       if (customSlug) {
-        requestBody.customUrl = customSlug;
+        requestBody.slug = customSlug;
       }
       if (expiration) {
-        requestBody.expirationTime = expiration;
+        requestBody.expiration = expiration;
       }
 
-      const response = await fetch('/api?action=create-url', {
+      const response = await fetch('/api/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,7 +41,7 @@ export const getUserUrls = createAsyncThunk(
   'url/getUserUrls',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api?action=user-urls', {
+      const response = await fetch('/api/urls', {
         method: 'GET',
         credentials: 'include',
       });

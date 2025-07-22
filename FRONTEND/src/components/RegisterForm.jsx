@@ -34,7 +34,7 @@ const RegisterForm = ({state = () => {}}) => {
       if (/[a-z]/.test(password)) strength += 1;
       if (/[A-Z]/.test(password)) strength += 1;
       if (/[0-9]/.test(password)) strength += 1;
-      if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+      if (/[@$!%*?&]/.test(password)) strength += 1; // Match backend special chars
       return strength;
     };
 
@@ -88,9 +88,9 @@ const RegisterForm = ({state = () => {}}) => {
       return;
     }
 
-    // Password strength check
-    if (passwordStrength < 3) {
-      setError('Password is too weak. Please use at least 8 characters with a mix of letters, numbers, and symbols.');
+    // Password strength check - must meet all requirements
+    if (passwordStrength < 5) {
+      setError('Password must contain at least 8 characters with lowercase, uppercase, number, and special character (@$!%*?&).');
       setIsLoading(false);
       return;
     }

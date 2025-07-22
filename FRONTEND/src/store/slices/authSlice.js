@@ -5,7 +5,7 @@ export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api?action=login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,9 +41,9 @@ export const registerUser = createAsyncThunk(
   async ({ name, email, password }, { rejectWithValue }) => {
     try {
       console.log('Attempting to register user:', { name, email });
-      console.log('Making request to: /api?action=register');
+      console.log('Making request to: /api/auth/register');
 
-      const response = await fetch('/api?action=register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,6 +54,14 @@ export const registerUser = createAsyncThunk(
 
       console.log('Response status:', response.status);
       console.log('Response headers:', response.headers);
+
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        return rejectWithValue('Server returned invalid response format');
+      }
 
       const data = await response.json();
       console.log('Response data:', data);
