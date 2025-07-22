@@ -26,6 +26,11 @@ export const createShortUrl = createAsyncThunk(
       const data = await response.json();
 
       if (!response.ok) {
+        // Handle validation errors with detailed messages
+        if (data.errors && Array.isArray(data.errors)) {
+          const errorMessages = data.errors.map(error => error.msg).join(', ');
+          return rejectWithValue(errorMessages);
+        }
         return rejectWithValue(data.message || 'Failed to create short URL');
       }
 

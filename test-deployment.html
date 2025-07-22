@@ -19,6 +19,7 @@
     
     <div>
         <button onclick="testAPI()">Test API Endpoint</button>
+        <button onclick="testCreateURL()">Test Create URL</button>
         <button onclick="testRegistration()">Test Registration</button>
         <button onclick="clearResults()">Clear Results</button>
     </div>
@@ -26,7 +27,7 @@
     <div id="results"></div>
 
     <script>
-        const API_BASE = 'https://shrinklink-3e3603ild-nitish-kumar-pandits-projects.vercel.app';
+        const API_BASE = 'https://shrinklink-gd9nuaxry-nitish-kumar-pandits-projects.vercel.app';
         
         function addResult(message, type = 'loading') {
             const results = document.getElementById('results');
@@ -64,16 +65,45 @@
             }
         }
         
+        async function testCreateURL() {
+            addResult('🔄 Testing URL creation...', 'loading');
+
+            const testUrl = {
+                full_url: 'https://www.google.com',
+                expires_in_days: 7
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testUrl)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    addResult(`✅ URL Creation Success!<br><pre>${JSON.stringify(data, null, 2)}</pre>`, 'success');
+                } else {
+                    addResult(`❌ URL Creation Failed: ${response.status}<br><pre>${JSON.stringify(data, null, 2)}</pre>`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ URL Creation Error: ${error.message}`, 'error');
+            }
+        }
+
         async function testRegistration() {
             addResult('🔄 Testing registration endpoint...', 'loading');
-            
+
             const testUser = {
                 username: 'testuser' + Date.now(),
                 email: 'test' + Date.now() + '@example.com',
                 password: 'TestPassword123!',
                 confirmPassword: 'TestPassword123!'
             };
-            
+
             try {
                 const response = await fetch(`${API_BASE}/api/auth/register`, {
                     method: 'POST',
@@ -82,9 +112,9 @@
                     },
                     body: JSON.stringify(testUser)
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     addResult(`✅ Registration Test Success!<br><pre>${JSON.stringify(data, null, 2)}</pre>`, 'success');
                 } else {

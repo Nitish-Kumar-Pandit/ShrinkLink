@@ -14,7 +14,42 @@ const UrlForm = () => {
   const [url, setUrl] = useState("")
   const [copied, setCopied] = useState(false)
   const [customSlug, setCustomSlug] = useState('')
+  const [customSlugError, setCustomSlugError] = useState('')
   const [expiration, setExpiration] = useState('14d') // Default to 14 days
+
+  // Validate custom slug
+  const validateCustomSlug = (slug) => {
+    if (!slug.trim()) {
+      setCustomSlugError('')
+      return true
+    }
+
+    // Check length (3-50 characters)
+    if (slug.length < 3) {
+      setCustomSlugError('Custom slug must be at least 3 characters long')
+      return false
+    }
+    if (slug.length > 50) {
+      setCustomSlugError('Custom slug must be less than 50 characters')
+      return false
+    }
+
+    // Check format (letters, numbers, hyphens, underscores only)
+    if (!/^[a-zA-Z0-9_-]+$/.test(slug)) {
+      setCustomSlugError('Custom slug can only contain letters, numbers, hyphens, and underscores')
+      return false
+    }
+
+    // Check reserved words
+    const reserved = ['api', 'admin', 'www', 'mail', 'ftp', 'localhost', 'health', 'auth', 'create', 'urls']
+    if (reserved.includes(slug.toLowerCase())) {
+      setCustomSlugError('This slug is reserved and cannot be used')
+      return false
+    }
+
+    setCustomSlugError('')
+    return true
+  }
   const [qrGenerated, setQrGenerated] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
@@ -142,6 +177,11 @@ const UrlForm = () => {
       return;
     }
 
+    // Validate custom slug if provided
+    if (isAuthenticated && customSlug.trim() && !validateCustomSlug(customSlug.trim())) {
+      return; // Don't submit if validation fails
+    }
+
     dispatch(clearCreateError());
 
     try {
@@ -256,12 +296,28 @@ const UrlForm = () => {
                       type="text"
                       id="customSlug"
                       value={customSlug}
-                      onChange={(event) => setCustomSlug(event.target.value)}
+                      onChange={(event) => {
+                        const value = event.target.value
+                        setCustomSlug(value)
+                        validateCustomSlug(value)
+                      }}
                       placeholder="my-custom-link"
-                      className="w-full px-3 py-2.5 text-sm border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-700 group-hover:border-gray-400 dark:group-hover:border-gray-500"
+                      className={`w-full px-3 py-2.5 text-sm border-2 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all duration-300 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-700 group-hover:border-gray-400 dark:group-hover:border-gray-500 ${
+                        customSlugError
+                          ? 'border-red-500 dark:border-red-400'
+                          : 'border-gray-300 dark:border-gray-600'
+                      }`}
                     />
                   </div>
                 </div>
+                {customSlugError && (
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1 flex items-start">
+                    <svg className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{customSlugError}</span>
+                  </p>
+                )}
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-start">
                   <svg className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

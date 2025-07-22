@@ -1,34 +1,15 @@
 {
-  "version": 2,
-  "builds": [
+  "buildCommand": "cd FRONTEND && npm install && npm run build",
+  "outputDirectory": "FRONTEND/dist",
+  "installCommand": "npm install",
+  "rewrites": [
     {
-      "src": "FRONTEND/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
     },
     {
-      "src": "BACKEND/app.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/BACKEND/app.js"
-    },
-    {
-      "src": "/health",
-      "dest": "/BACKEND/app.js"
-    },
-    {
-      "src": "/[a-zA-Z0-9_-]{3,10}",
-      "dest": "/BACKEND/app.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/FRONTEND/dist/$1"
+      "source": "/((?!api).*)",
+      "destination": "/index.html"
     }
   ]
 }

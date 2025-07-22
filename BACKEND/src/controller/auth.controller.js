@@ -1,8 +1,19 @@
 import { loginUserService, registerUserService } from "../services/auth.service.js";
 import { cookieOptions } from "../config/config.js";
+import { validationResult } from 'express-validator';
 
 export const registerUser = async (req, res) => {
     try {
+        // Check validation errors
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: "Validation failed",
+                errors: errors.array()
+            });
+        }
+
         const {name, email, password} = req.body;
 
         // Basic validation
@@ -67,6 +78,16 @@ export const testCookie = async (req, res) => {
 
 export const loginUser = async (req, res) => {
     try {
+        // Check validation errors
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: "Validation failed",
+                errors: errors.array()
+            });
+        }
+
         const { email, password } = req.body;
 
         // Basic validation

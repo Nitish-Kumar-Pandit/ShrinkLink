@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: shrinklink-backend
+    env: node
+    plan: free
+    buildCommand: cd BACKEND && npm install
+    startCommand: cd BACKEND && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        value: mongodb://localhost:27017/shrinklink
+      - key: JWT_SECRET
+        value: your_super_secret_jwt_key_here_make_it_long_and_random_123456789
+      - key: PORT
+        value: 10000
+
+  - type: web
+    name: shrinklink-frontend
+    env: static
+    buildCommand: cd FRONTEND && npm install && npm run build
+    staticPublishPath: FRONTEND/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
