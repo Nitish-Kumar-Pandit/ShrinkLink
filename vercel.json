@@ -1,51 +1,5 @@
 {
-  "version": 2,
   "buildCommand": "cd FRONTEND && npm install && npm run build",
   "outputDirectory": "FRONTEND/dist",
-  "installCommand": "npm install && cd FRONTEND && npm install",
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "@vercel/node"
-    }
-  },
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Credentials",
-          "value": "true"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, Cookie"
-        }
-      ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/health",
-      "destination": "/api/health"
-    },
-    {
-      "source": "/([a-zA-Z0-9_-]{3,10})$",
-      "destination": "/api/redirect/$1"
-    },
-    {
-      "source": "/((?!api|_next|favicon.ico|health).*)",
-      "destination": "/index.html"
-    }
-  ]
+  "installCommand": "npm install && cd FRONTEND && npm install"
 }

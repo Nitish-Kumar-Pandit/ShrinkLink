@@ -14,8 +14,7 @@ export const createShortUrl = createAsyncThunk(
         requestBody.expiration = expiration;
       }
 
-      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
-      const response = await fetch(`${apiBase}/api/create/`, {
+      const response = await fetch('/api/create/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,8 +41,7 @@ export const getUserUrls = createAsyncThunk(
   'url/getUserUrls',
   async (_, { rejectWithValue }) => {
     try {
-      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
-      const response = await fetch(`${apiBase}/api/urls`, {
+      const response = await fetch('/api/urls', {
         method: 'GET',
         credentials: 'include',
       });
@@ -66,8 +64,7 @@ export const getUserStats = createAsyncThunk(
   'url/getUserStats',
   async (_, { rejectWithValue }) => {
     try {
-      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
-      const response = await fetch(`${apiBase}/api/stats`, {
+      const response = await fetch('/api/stats', {
         method: 'GET',
         credentials: 'include',
       });
@@ -90,8 +87,7 @@ export const fetchAnonymousUsage = createAsyncThunk(
   'url/fetchAnonymousUsage',
   async (_, { rejectWithValue }) => {
     try {
-      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
-      const response = await fetch(`${apiBase}/api/create/anonymous-usage`, {
+      const response = await fetch('/api/create/anonymous-usage', {
         method: 'GET',
         credentials: 'include',
       });
@@ -114,8 +110,7 @@ export const toggleFavorite = createAsyncThunk(
   'url/toggleFavorite',
   async (urlId, { rejectWithValue }) => {
     try {
-      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
-      const response = await fetch(`${apiBase}/api/create/favorite/${urlId}`, {
+      const response = await fetch(`/api/create/favorite/${urlId}`, {
         method: 'PATCH',
         credentials: 'include',
       });
