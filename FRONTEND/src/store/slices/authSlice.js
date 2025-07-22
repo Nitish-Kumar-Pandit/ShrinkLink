@@ -16,10 +16,15 @@ export const loginUser = createAsyncThunk(
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
+      console.log('Login Content-Type:', contentType);
+
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
-        console.error('Non-JSON response:', text);
-        return rejectWithValue('Server returned invalid response format');
+        console.error('Login Non-JSON response:', text);
+        console.error('Login Response status:', response.status);
+        console.error('Login Response statusText:', response.statusText);
+        console.error('Login All headers:', [...response.headers.entries()]);
+        return rejectWithValue(`Server returned invalid response format. Status: ${response.status}, Content-Type: ${contentType}, Response: ${text.substring(0, 200)}`);
       }
 
       const data = await response.json();
@@ -57,10 +62,15 @@ export const registerUser = createAsyncThunk(
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
+      console.log('Content-Type:', contentType);
+
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error('Non-JSON response:', text);
-        return rejectWithValue('Server returned invalid response format');
+        console.error('Response status:', response.status);
+        console.error('Response statusText:', response.statusText);
+        console.error('All headers:', [...response.headers.entries()]);
+        return rejectWithValue(`Server returned invalid response format. Status: ${response.status}, Content-Type: ${contentType}, Response: ${text.substring(0, 200)}`);
       }
 
       const data = await response.json();
