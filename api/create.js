@@ -38,10 +38,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { full_url, custom_code, expires_in_days = 14 } = req.body;
+    // Match frontend structure: { url, slug, expiration }
+    const { url, slug, expiration = '14d' } = req.body;
 
     // Validate URL
-    if (!full_url) {
+    if (!url) {
       return res.status(400).json({
         success: false,
         message: 'URL is required'
@@ -50,7 +51,7 @@ export default async function handler(req, res) {
 
     // Validate URL format
     try {
-      new URL(full_url);
+      new URL(url);
     } catch {
       return res.status(400).json({
         success: false,
@@ -59,11 +60,11 @@ export default async function handler(req, res) {
     }
 
     // Generate or use custom short code
-    let short_code = custom_code || generateShortCode();
-    
+    let short_code = slug || generateShortCode();
+
     // Check if custom code already exists
-    if (custom_code) {
-      const existing = await DB.findUrlByShortCode(custom_code);
+    if (slug) {
+      const existing = await DB.findUrlByShortCode(slug);
       if (existing) {
         return res.status(409).json({
           success: false,
@@ -72,27 +73,60 @@ export default async function handler(req, res) {
       }
     }
 
-    // Calculate expiration date
+    // Calculate expiration date from expiration string
     const expires_at = new Date();
-    expires_at.setDate(expires_at.getDate() + parseInt(expires_in_days));
+    let days = 14; // default
+
+    if (expiration) {
+      if (expiration.endsWith('h')) {
+        const hours = parseInt(expiration);
+        expires_at.setHours(expires_at.getHours() + hours);
+      } else if (expiration.endsWith('d')) {
+        days = parseInt(expiration);
+        expires_at.setDate(expires_at.getDate() + days);
+      } else {
+        // Fallback to days
+        days = parseInt(expiration) || 14;
+        expires_at.setDate(expires_at.getDate() + days);
+      }
+    } else {
+      expires_at.setDate(expires_at.getDate() + days);
+    }
+
+    // Get client IP for anonymous users
+    let clientIP = req.ip ||
+                  req.connection?.remoteAddress ||
+                  req.socket?.remoteAddress ||
+                  (req.connection?.socket ? req.connection.socket.remoteAddress : null) ||
+                  req.headers['x-forwarded-for']?.split(',')[0] ||
+                  req.headers['x-real-ip'] ||
+                  '127.0.0.1'; // Fallback for development
+
+    // Clean up the IP (remove IPv6 prefix if present)
+    if (clientIP && clientIP.startsWith('::ffff:')) {
+      clientIP = clientIP.substring(7);
+    }
 
     // Create URL
     const urlData = {
       short_code,
-      full_url,
+      full_url: url, // Use the url field from request
       expires_at,
-      user_id: null // For now, no user authentication
+      user_id: null, // For now, no user authentication
+      clientIP: clientIP // Track IP for anonymous users
     };
 
     const newUrl = await DB.createUrl(urlData);
 
+    // Match frontend expected response format
     res.status(201).json({
       success: true,
+      shortUrl: `https://${req.headers.host}/${newUrl.short_code}`,
       data: {
         id: newUrl.id || newUrl._id,
         short_code: newUrl.short_code,
         full_url: newUrl.full_url,
-        short_url: `${req.headers.host}/${newUrl.short_code}`,
+        short_url: `https://${req.headers.host}/${newUrl.short_code}`,
         expires_at: newUrl.expires_at,
         created_at: newUrl.created_at,
         clicks: newUrl.clicks || 0

@@ -15,6 +15,7 @@ export const InMemoryDB = {
       short_code: urlData.short_code,
       full_url: urlData.full_url,
       user_id: urlData.user_id || null,
+      clientIP: urlData.clientIP || null,
       clicks: 0,
       is_favorite: false,
       expires_at: urlData.expires_at,

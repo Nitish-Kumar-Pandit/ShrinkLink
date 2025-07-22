@@ -1,52 +1,6 @@
-import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-
-// User Schema
-const userSchema = new mongoose.Schema({
-  username: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  avatar: { type: String, default: '' },
-  avatarUrl: { type: String, default: '' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-const User = mongoose.models.User || mongoose.model('User', userSchema);
-
-// Database connection
-let isConnected = false;
-async function connectDB() {
-  if (isConnected) return;
-
-  // Check if MONGO_URI is available
-  if (!process.env.MONGO_URI) {
-    console.error('❌ MONGO_URI environment variable is not set');
-    throw new Error('Database configuration missing. Please set MONGO_URI environment variable.');
-  }
-
-  try {
-    console.log('🔄 Attempting to connect to MongoDB...');
-    console.log('📍 MongoDB URI:', process.env.MONGO_URI.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
-
-    await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-      maxPoolSize: 10,
-      minPoolSize: 5,
-      maxIdleTimeMS: 30000,
-      bufferCommands: false,
-      bufferMaxEntries: 0,
-    });
-    isConnected = true;
-    console.log('✅ Database connected successfully');
-  } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
-    console.error('❌ Full error:', error);
-    throw new Error(`Failed to connect to database: ${error.message}`);
-  }
-}
+import { DB } from '../database.js';
 
 // CORS headers
 const corsHeaders = {
@@ -69,8 +23,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
-
     if (req.method !== 'POST') {
       return res.status(405).json({ message: 'Method not allowed' });
     }
@@ -84,16 +36,10 @@ export default async function handler(req, res) {
       });
     }
 
-    // Check if JWT_SECRET is available
-    if (!process.env.JWT_SECRET) {
-      console.error('❌ JWT_SECRET environment variable is not set');
-      return res.status(500).json({
-        success: false,
-        message: "Server configuration error. Please contact administrator."
-      });
-    }
+    // Check if JWT_SECRET is available (use a default for demo purposes)
+    const jwtSecret = process.env.JWT_SECRET || 'demo_jwt_secret_key_for_development_only';
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await DB.findUserByEmail(email);
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -104,19 +50,19 @@ export default async function handler(req, res) {
     const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const user = new User({
+    const userData = {
       username: name,
       email,
       password: hashedPassword,
       avatar: '',
       avatarUrl: `https://www.gravatar.com/avatar/${Buffer.from(email).toString('hex')}?d=identicon`
-    });
+    };
 
-    await user.save();
+    const user = await DB.createUser(userData);
 
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
-      process.env.JWT_SECRET,
+      { userId: user.id || user._id, email: user.email },
+      jwtSecret,
       { expiresIn: "24h" }
     );
 
@@ -126,7 +72,7 @@ export default async function handler(req, res) {
       success: true,
       message: "User registered successfully",
       user: {
-        id: user._id,
+        id: user.id || user._id,
         username: user.username,
         email: user.email,
         avatar: user.avatar,

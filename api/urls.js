@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { DB } from '../database.js';
+import { DB } from './database.js';
 
 // CORS headers
 const corsHeaders = {
@@ -20,6 +20,23 @@ function getTokenFromCookies(cookieHeader) {
   }, {});
   
   return cookies.accessToken;
+}
+
+// Helper function to calculate URL status
+function calculateUrlStatus(url) {
+  if (!url.expires_at) return 'active';
+  
+  const now = new Date();
+  const expiresAt = new Date(url.expires_at);
+  const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  
+  if (now > expiresAt) {
+    return 'expired';
+  } else if (expiresAt <= oneDayFromNow) {
+    return 'expiring_soon';
+  } else {
+    return 'active';
+  }
 }
 
 export default async function handler(req, res) {
@@ -44,7 +61,7 @@ export default async function handler(req, res) {
 
     // Get token from cookies
     const token = getTokenFromCookies(req.headers.cookie);
-
+    
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -54,10 +71,10 @@ export default async function handler(req, res) {
 
     // Verify token
     const decoded = jwt.verify(token, jwtSecret);
-
+    
     // Find user
     const user = await DB.findUserById(decoded.userId);
-
+    
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -65,37 +82,47 @@ export default async function handler(req, res) {
       });
     }
 
+    // Get user's URLs
+    const urls = await DB.getUserUrls(user.id || user._id);
+    
+    // Format URLs with status and additional info
+    const formattedUrls = urls.map(url => ({
+      id: url.id || url._id,
+      shortUrl: `https://${req.headers.host}/${url.short_code}`,
+      originalUrl: url.full_url,
+      shortCode: url.short_code,
+      clicks: url.clicks || 0,
+      createdAt: url.created_at,
+      expiresAt: url.expires_at,
+      status: calculateUrlStatus(url),
+      isFavorite: url.is_favorite || false
+    }));
+
     res.status(200).json({
       success: true,
-      user: {
-        id: user.id || user._id,
-        username: user.username,
-        email: user.email,
-        avatar: user.avatar,
-        avatarUrl: user.avatarUrl,
-        createdAt: user.createdAt
-      }
+      urls: formattedUrls
     });
-  } catch (error) {
-    console.error('❌ Get user error:', error);
 
+  } catch (error) {
+    console.error('❌ Get URLs error:', error);
+    
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
         message: "Invalid access token"
       });
     }
-
+    
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
         message: "Access token expired"
       });
     }
-
+    
     return res.status(500).json({
       success: false,
-      message: "Failed to get user information",
+      message: "Failed to get URLs",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
