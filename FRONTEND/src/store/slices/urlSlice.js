@@ -14,7 +14,8 @@ export const createShortUrl = createAsyncThunk(
         requestBody.expiration = expiration;
       }
 
-      const response = await fetch('http://localhost:3000/api/create/', {
+      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
+      const response = await fetch(`${apiBase}/api/create/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,7 +42,8 @@ export const getUserUrls = createAsyncThunk(
   'url/getUserUrls',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:3000/api/urls', {
+      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
+      const response = await fetch(`${apiBase}/api/urls`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -64,7 +66,8 @@ export const getUserStats = createAsyncThunk(
   'url/getUserStats',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:3000/api/stats', {
+      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
+      const response = await fetch(`${apiBase}/api/stats`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -87,7 +90,8 @@ export const fetchAnonymousUsage = createAsyncThunk(
   'url/fetchAnonymousUsage',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:3000/api/create/anonymous-usage', {
+      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
+      const response = await fetch(`${apiBase}/api/create/anonymous-usage`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -110,7 +114,8 @@ export const toggleFavorite = createAsyncThunk(
   'url/toggleFavorite',
   async (urlId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/create/favorite/${urlId}`, {
+      const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:3000');
+      const response = await fetch(`${apiBase}/api/create/favorite/${urlId}`, {
         method: 'PATCH',
         credentials: 'include',
       });
