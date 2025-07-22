@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "ShrinkLink - Full Stack URL Shortener",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "echo 'Root build complete'",
     "dev": "cd FRONTEND && npm run dev",

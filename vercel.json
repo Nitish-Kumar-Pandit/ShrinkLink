@@ -1,26 +1,34 @@
 {
-  "buildCommand": "npm install && cd FRONTEND && npm install && npm run build",
-  "outputDirectory": "FRONTEND/dist",
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/((?!api).*)",
-      "destination": "/index.html"
+      "src": "FRONTEND/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    },
+    {
+      "src": "BACKEND/app.js",
+      "use": "@vercel/node"
     }
   ],
-  "headers": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Credentials", "value": "true" },
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
-        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, Cookie" }
-      ]
+      "src": "/api/(.*)",
+      "dest": "/BACKEND/app.js"
+    },
+    {
+      "src": "/health",
+      "dest": "/BACKEND/app.js"
+    },
+    {
+      "src": "/[a-zA-Z0-9_-]{3,10}",
+      "dest": "/BACKEND/app.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/FRONTEND/dist/$1"
     }
   ]
 }
