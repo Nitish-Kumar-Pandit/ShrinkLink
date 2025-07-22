@@ -3,24 +3,6 @@
   "buildCommand": "cd FRONTEND && npm install && npm run build",
   "outputDirectory": "FRONTEND/dist",
   "installCommand": "npm install && cd FRONTEND && npm install",
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/health",
-      "dest": "/api/health"
-    },
-    {
-      "src": "/([a-zA-Z0-9_-]{3,10})$",
-      "dest": "/api/redirect/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
   "functions": {
     "api/**/*.js": {
       "runtime": "nodejs18.x"
@@ -54,7 +36,15 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!api|_next|favicon.ico).*)",
+      "source": "/health",
+      "destination": "/api/health"
+    },
+    {
+      "source": "/([a-zA-Z0-9_-]{3,10})$",
+      "destination": "/api/redirect/$1"
+    },
+    {
+      "source": "/((?!api|_next|favicon.ico|health).*)",
       "destination": "/index.html"
     }
   ]
