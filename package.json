@@ -2,19 +2,33 @@
   "name": "shrinklink-fullstack",
   "version": "1.0.0",
   "description": "ShrinkLink - Full Stack URL Shortener",
-  "main": "index.js",
+  "main": "server.js",
   "type": "module",
   "scripts": {
-    "build": "echo 'Root build complete'",
-    "dev": "cd FRONTEND && npm run dev",
-    "start": "cd FRONTEND && npm run preview"
+    "build": "cd FRONTEND && npm install && npm run build",
+    "start": "node server.js",
+    "dev": "cd BACKEND && npm run dev",
+    "dev:frontend": "cd FRONTEND && npm run dev"
   },
-  "keywords": ["url-shortener", "vercel", "serverless"],
+  "keywords": ["url-shortener", "render", "fullstack"],
   "author": "ShrinkLink",
   "license": "ISC",
   "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.3.1",
     "mongoose": "^8.0.0",
     "bcrypt": "^5.1.1",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "nanoid": "^5.0.4",
+    "express-validator": "^7.0.1",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "express-mongo-sanitize": "^2.2.0",
+    "xss-clean": "^0.1.4",
+    "hpp": "^0.2.3",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0"
   }
 }
