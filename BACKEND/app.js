@@ -7,15 +7,41 @@ import UrlSchema from './src/models/shorturl.model.js';
 import connectDB from './src/config/mongo.config.js';
 import auth_routes from './src/routes/auth.route.js';
 import { redirectFromShortUrl, getUserUrlsController, getUserStatsController } from './src/controller/short_url.controller.js';
-dotenv.config("./.env");
+
+// Load environment variables
+dotenv.config();
+
 import cors from 'cors';
 import { attachUser } from './src/utils/attachUser.js';
 import cookieParser from 'cookie-parser';
 
-app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
-    credentials: true
-}));
+// CORS configuration for both development and production
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        const allowedOrigins = [
+            'http://localhost:5173',
+            'http://localhost:5174',
+            'http://localhost:5175',
+            process.env.FRONTEND_URL,
+            process.env.CORS_ORIGIN
+        ].filter(Boolean); // Remove undefined values
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log('CORS blocked origin:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -92,7 +118,14 @@ app.get("/:id", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () =>{
+// Set APP_URL for production if not set
+if (process.env.NODE_ENV === 'production' && !process.env.APP_URL) {
+    process.env.APP_URL = `https://${process.env.RENDER_EXTERNAL_HOSTNAME || 'localhost:' + PORT}`;
+}
+
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 ShrinkLink server running on port ${PORT}`);
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔗 App URL: ${process.env.APP_URL || 'http://localhost:' + PORT}`);
     connectDB();
-})
+});
