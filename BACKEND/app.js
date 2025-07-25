@@ -25,6 +25,7 @@ const corsOptions = {
             'http://localhost:5173',
             'http://localhost:5174',
             'http://localhost:5175',
+            'https://shrinklink-frontend.onrender.com', // Replace with actual frontend URL after deployment
             process.env.FRONTEND_URL,
             process.env.CORS_ORIGIN
         ].filter(Boolean); // Remove undefined values
