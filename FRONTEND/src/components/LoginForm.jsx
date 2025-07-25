@@ -51,7 +51,6 @@ const LoginForm = ({state}) => {
       }));
 
       if (loginUser.fulfilled.match(result)) {
-        console.log('Login successful:', result.payload);
         navigate({ to: '/dashboard' });
         // Reset form
         setFormData({ email: '', password: '' });
@@ -59,11 +58,12 @@ const LoginForm = ({state}) => {
         // Handle login error
         const errorMessage = result.payload?.message || result.payload || 'Login failed';
         setError(errorMessage);
-        console.error('Login failed:', result.payload);
       }
     } catch (error) {
       setError('Login failed. Please try again.');
-      console.error('Login failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Login failed:', error);
+      }
     } finally {
       setIsLoading(false);
     }

@@ -8,6 +8,11 @@ import cookieParser from 'cookie-parser';
 // Load environment variables
 dotenv.config();
 
+// Set APP_URL for production if not set
+if (process.env.NODE_ENV === 'production' && !process.env.APP_URL) {
+  process.env.APP_URL = `https://${process.env.RENDER_EXTERNAL_HOSTNAME || 'localhost:10000'}`;
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

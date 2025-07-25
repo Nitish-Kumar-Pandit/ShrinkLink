@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 
 const SocialProof = () => {
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
@@ -9,6 +9,8 @@ const SocialProof = () => {
     clicks: 0,
     countries: 0
   })
+  const animationRef = useRef()
+  const startTimeRef = useRef()
 
   const testimonials = [
     {
@@ -56,31 +58,47 @@ const SocialProof = () => {
     { name: "GrowthHack", logo: "GH" }
   ]
 
+  // Optimized counter animation using requestAnimationFrame
+  const animateCounters = useCallback(() => {
+    const duration = 2000
+    const targetValues = {
+      users: 15000,
+      links: 2.5,
+      clicks: 50,
+      countries: 195
+    }
+
+    const animateFrame = (timestamp) => {
+      if (!startTimeRef.current) {
+        startTimeRef.current = timestamp
+      }
+
+      const elapsed = timestamp - startTimeRef.current
+      const progress = Math.min(elapsed / duration, 1)
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+
+      setAnimatedCounters({
+        users: Math.floor(easeOutQuart * targetValues.users),
+        links: Math.floor(easeOutQuart * targetValues.links),
+        clicks: Math.floor(easeOutQuart * targetValues.clicks),
+        countries: Math.floor(easeOutQuart * targetValues.countries)
+      })
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animateFrame)
+      }
+    }
+
+    animationRef.current = requestAnimationFrame(animateFrame)
+  }, [])
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
           setIsVisible(true)
-          
-          // Animate counters
-          const duration = 2000
-          const steps = 60
-          const interval = duration / steps
-          
-          let step = 0
-          const timer = setInterval(() => {
-            step++
-            const progress = step / steps
-            
-            setAnimatedCounters({
-              users: Math.floor(progress * 15000),
-              links: Math.floor(progress * 2.5),
-              clicks: Math.floor(progress * 50),
-              countries: Math.floor(progress * 195)
-            })
-            
-            if (step >= steps) clearInterval(timer)
-          }, interval)
+          startTimeRef.current = null
+          animateCounters()
         }
       },
       { threshold: 0.3 }
@@ -89,8 +107,13 @@ const SocialProof = () => {
     const element = document.getElementById('social-proof')
     if (element) observer.observe(element)
 
-    return () => observer.disconnect()
-  }, [])
+    return () => {
+      observer.disconnect()
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+      }
+    }
+  }, [animateCounters])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -259,4 +282,4 @@ const SocialProof = () => {
   )
 }
 
-export default SocialProof
+export default React.memo(SocialProof);

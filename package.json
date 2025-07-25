@@ -5,10 +5,14 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
+    "setup": "node setup-env.js",
+    "setup:env": "node setup-env.js",
     "build": "cd FRONTEND && npm install && npm run build",
     "start": "node server.js",
     "dev": "cd BACKEND && npm run dev",
-    "dev:frontend": "cd FRONTEND && npm run dev"
+    "dev:frontend": "cd FRONTEND && npm run dev",
+    "dev:both": "concurrently \"npm run dev\" \"npm run dev:frontend\"",
+    "install:all": "npm install && cd BACKEND && npm install && cd ../FRONTEND && npm install"
   },
   "keywords": ["url-shortener", "render", "fullstack"],
   "author": "ShrinkLink",

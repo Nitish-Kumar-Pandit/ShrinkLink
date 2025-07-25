@@ -21,7 +21,9 @@ const RootLayout = () => {
         }
       } catch (error) {
         // User is not authenticated, which is fine
-        console.log('User not authenticated:', error.response?.status)
+        if (process.env.NODE_ENV === 'development') {
+          console.log('User not authenticated:', error.response?.status)
+        }
       }
     }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logoutUser } from '../store/slices/authSlice';
 import { Link, useNavigate, useLocation } from '@tanstack/react-router';
@@ -10,9 +10,21 @@ const Navbar = () => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const ticking = useRef(false);
 
   // Check if we're on the home page
   const isHomePage = location.pathname === '/';
+
+  // Optimized scroll handler with requestAnimationFrame
+  const handleScroll = useCallback(() => {
+    if (!ticking.current) {
+      requestAnimationFrame(() => {
+        setIsScrolled(window.scrollY > 100);
+        ticking.current = false;
+      });
+      ticking.current = true;
+    }
+  }, []);
 
   // Simple scroll effect for logo animation (only on home page)
   useEffect(() => {
@@ -21,13 +33,9 @@ const Navbar = () => {
       return;
     }
 
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 100);
-    };
-
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isHomePage]);
+  }, [isHomePage, handleScroll]);
 
   const handleLogout = async () => {
     try {
@@ -239,6 +247,6 @@ const Navbar = () => {
       </div>
     </nav>
   );
-};
+}
 
-export default Navbar;
+export default React.memo(Navbar);

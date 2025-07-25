@@ -16,14 +16,15 @@ export const loginUser = createAsyncThunk(
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
-      console.log('Login Content-Type:', contentType);
 
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
-        console.error('Login Non-JSON response:', text);
-        console.error('Login Response status:', response.status);
-        console.error('Login Response statusText:', response.statusText);
-        console.error('Login All headers:', [...response.headers.entries()]);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Login Non-JSON response:', text);
+          console.error('Login Response status:', response.status);
+          console.error('Login Response statusText:', response.statusText);
+          console.error('Login All headers:', [...response.headers.entries()]);
+        }
         return rejectWithValue(`Server returned invalid response format. Status: ${response.status}, Content-Type: ${contentType}, Response: ${text.substring(0, 200)}`);
       }
 
@@ -35,7 +36,9 @@ export const loginUser = createAsyncThunk(
 
       return data;
     } catch (error) {
-      console.error('Login error:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Login error:', error);
+      }
       return rejectWithValue(error.message || 'Network error');
     }
   }
@@ -45,9 +48,6 @@ export const registerUser = createAsyncThunk(
   'auth/registerUser',
   async ({ name, email, password }, { rejectWithValue }) => {
     try {
-      console.log('Attempting to register user:', { name, email });
-      console.log('Making request to: /api/auth/register');
-
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -57,24 +57,21 @@ export const registerUser = createAsyncThunk(
         body: JSON.stringify({ name, email, password }),
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
-      console.log('Content-Type:', contentType);
 
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
-        console.error('Non-JSON response:', text);
-        console.error('Response status:', response.status);
-        console.error('Response statusText:', response.statusText);
-        console.error('All headers:', [...response.headers.entries()]);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Non-JSON response:', text);
+          console.error('Response status:', response.status);
+          console.error('Response statusText:', response.statusText);
+          console.error('All headers:', [...response.headers.entries()]);
+        }
         return rejectWithValue(`Server returned invalid response format. Status: ${response.status}, Content-Type: ${contentType}, Response: ${text.substring(0, 200)}`);
       }
 
       const data = await response.json();
-      console.log('Response data:', data);
 
       if (!response.ok) {
         return rejectWithValue(data.message || 'Registration failed');
@@ -82,10 +79,12 @@ export const registerUser = createAsyncThunk(
 
       return data;
     } catch (error) {
-      console.error('Registration error details:', error);
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Registration error details:', error);
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       return rejectWithValue(`Failed to fetch: ${error.message}`);
     }
   }

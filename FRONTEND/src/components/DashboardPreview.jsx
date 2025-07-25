@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 
 const DashboardPreview = () => {
   const [activeTab, setActiveTab] = useState('overview')
@@ -8,31 +8,48 @@ const DashboardPreview = () => {
     links: 0,
     conversion: 0
   })
+  const animationRef = useRef()
+  const startTimeRef = useRef()
+
+  // Optimized animation using requestAnimationFrame
+  const animateStats = useCallback(() => {
+    const duration = 2000
+    const targetValues = {
+      clicks: 12847,
+      links: 156,
+      conversion: 94
+    }
+
+    const animateFrame = (timestamp) => {
+      if (!startTimeRef.current) {
+        startTimeRef.current = timestamp
+      }
+
+      const elapsed = timestamp - startTimeRef.current
+      const progress = Math.min(elapsed / duration, 1)
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+
+      setAnimatedStats({
+        clicks: Math.floor(easeOutQuart * targetValues.clicks),
+        links: Math.floor(easeOutQuart * targetValues.links),
+        conversion: Math.floor(easeOutQuart * targetValues.conversion)
+      })
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animateFrame)
+      }
+    }
+
+    animationRef.current = requestAnimationFrame(animateFrame)
+  }, [])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
           setIsVisible(true)
-          
-          // Animate stats
-          const duration = 2000
-          const steps = 60
-          const interval = duration / steps
-          
-          let step = 0
-          const timer = setInterval(() => {
-            step++
-            const progress = step / steps
-            
-            setAnimatedStats({
-              clicks: Math.floor(progress * 12847),
-              links: Math.floor(progress * 156),
-              conversion: Math.floor(progress * 94)
-            })
-            
-            if (step >= steps) clearInterval(timer)
-          }, interval)
+          startTimeRef.current = null
+          animateStats()
         }
       },
       { threshold: 0.3 }
@@ -41,8 +58,13 @@ const DashboardPreview = () => {
     const element = document.getElementById('dashboard-preview')
     if (element) observer.observe(element)
 
-    return () => observer.disconnect()
-  }, [])
+    return () => {
+      observer.disconnect()
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+      }
+    }
+  }, [animateStats])
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: 'chart' },
@@ -296,4 +318,4 @@ const DashboardPreview = () => {
   )
 }
 
-export default DashboardPreview
+export default React.memo(DashboardPreview);

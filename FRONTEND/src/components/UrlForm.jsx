@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createShortUrl, getUserUrls, getUserStats, fetchAnonymousUsage, clearCreateError, setCreateError } from '../store/slices/urlSlice.js'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from '@tanstack/react-router'
@@ -58,16 +58,7 @@ const UrlForm = () => {
   const {isAuthenticated} = useSelector((state) => state.auth)
   const {currentShortUrl, isLoading, anonymousUsage, createError} = useSelector((state) => state.url)
 
-  // Debug logging
-  useEffect(() => {
-    console.log('🔍 UrlForm state:', {
-      currentShortUrl,
-      isLoading,
-      anonymousUsage,
-      isAuthenticated
-    });
-  }, [currentShortUrl, isLoading, anonymousUsage, isAuthenticated]);
-
+  // Optimized effect - removed debug logging for performance
   useEffect(() => {
     // Clear any previous errors when component mounts or auth state changes
     dispatch(clearCreateError());
@@ -75,7 +66,6 @@ const UrlForm = () => {
     // Load anonymous usage from backend
     if (!isAuthenticated) {
       dispatch(fetchAnonymousUsage());
-      console.log('📊 Anonymous usage loaded from backend on component mount');
     }
   }, [dispatch, isAuthenticated]);
 
@@ -83,35 +73,28 @@ const UrlForm = () => {
     setIsVisible(true)
   }, [])
 
+  // Optimized QR code generation with memoized options
+  const qrOptions = useMemo(() => ({
+    width: 200,
+    margin: 2,
+    color: {
+      dark: '#000000',
+      light: '#FFFFFF'
+    }
+  }), []);
+
   const generateQRCode = useCallback(async () => {
     try {
-      console.log('🔄 Generating QR code...', {
-        hasCanvas: !!canvasRef.current,
-        currentShortUrl
-      });
-
       if (canvasRef.current && currentShortUrl) {
-        await QRCode.toCanvas(canvasRef.current, currentShortUrl, {
-          width: 200,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
-        });
+        await QRCode.toCanvas(canvasRef.current, currentShortUrl, qrOptions);
         setQrGenerated(true);
-        console.log('✅ QR code generated successfully');
-      } else {
-        console.log('❌ Cannot generate QR code:', {
-          hasCanvas: !!canvasRef.current,
-          hasUrl: !!currentShortUrl
-        });
       }
     } catch (error) {
-      console.error('Error generating QR code:', error);
-      console.error('Failed to generate QR code. Please try again.');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error generating QR code:', error);
+      }
     }
-  }, [currentShortUrl]);
+  }, [currentShortUrl, qrOptions]);
 
   // Removed auto-QR generation - user must click "Generate QR" button manually
 
@@ -130,27 +113,18 @@ const UrlForm = () => {
     }
   }
 
-  const handleGenerateQR = () => {
-    console.log('📱 Generate QR clicked, currentShortUrl:', currentShortUrl, 'hasCanvas:', !!canvasRef.current);
+  // Optimized QR generation handler
+  const handleGenerateQR = useCallback(() => {
     if (currentShortUrl) {
-      // Always ensure QR section is visible first, then generate
       setQrGenerated(true);
-
-      // Wait for DOM to update and canvas to be available
-      setTimeout(() => {
+      // Use requestAnimationFrame for better performance
+      requestAnimationFrame(() => {
         if (canvasRef.current) {
-          console.log('✅ Generating QR code...');
           generateQRCode();
-        } else {
-          console.log('❌ Canvas still not ready after timeout');
-          console.error('QR code canvas not ready. Please try again.');
         }
-      }, 50);
-    } else {
-      console.log('❌ No currentShortUrl available for QR');
-      console.error('Please create a short URL first before generating QR code');
+      });
     }
-  }
+  }, [currentShortUrl, generateQRCode]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(currentShortUrl);

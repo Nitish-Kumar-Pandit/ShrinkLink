@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import UrlForm from '../components/UrlForm'
 import AnonymousUsage from '../components/AnonymousUsage'
@@ -12,24 +12,29 @@ const HomePage = () => {
   const navigate = useNavigate()
   const [isVisible, setIsVisible] = useState({})
 
+  // Optimized intersection observer with memoized options
+  const observerOptions = useMemo(() => ({
+    threshold: 0.1,
+    rootMargin: '50px'
+  }), [])
+
+  const handleIntersection = useCallback((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        setIsVisible(prev => ({ ...prev, [entry.target.id]: true }))
+      }
+    })
+  }, [])
+
   // Intersection Observer for scroll animations
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(prev => ({ ...prev, [entry.target.id]: true }))
-          }
-        })
-      },
-      { threshold: 0.1, rootMargin: '50px' }
-    )
+    const observer = new IntersectionObserver(handleIntersection, observerOptions)
 
     const elements = document.querySelectorAll('[data-animate]')
     elements.forEach(el => observer.observe(el))
 
     return () => observer.disconnect()
-  }, [])
+  }, [handleIntersection, observerOptions])
 
   const features = [
     {
@@ -165,4 +170,4 @@ const HomePage = () => {
   )
 }
 
-export default HomePage
+export default React.memo(HomePage);

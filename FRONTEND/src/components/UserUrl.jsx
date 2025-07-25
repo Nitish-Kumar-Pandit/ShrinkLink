@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { getUserUrls, getUserStats, updateUrlStats, toggleFavorite, clearError } from '../store/slices/urlSlice'
 import { getTimeRemaining, formatExpirationDate, formatDate } from '../utils/timeUtils'
@@ -7,8 +7,12 @@ import FavoriteUrls from './FavoriteUrls'
 
 const UserUrl = () => {
   const dispatch = useDispatch()
-  const { urls, isLoading, error, stats } = useSelector((state) => state.url)
+
+  // Memoized selectors to prevent unnecessary re-renders
+  const urlState = useSelector((state) => state.url)
+  const { urls, isLoading, error, stats } = urlState
   const { isAuthenticated } = useSelector((state) => state.auth)
+
   const [copiedId, setCopiedId] = useState(null)
   const [clickedId, setClickedId] = useState(null)
   const [testLink, setTestLink] = useState(null)
@@ -30,50 +34,56 @@ const UserUrl = () => {
     setIsVisible(true)
   }, [])
 
-  // Filter and sort URLs with safety checks
-  const filteredUrls = (urls || []).filter(url => {
-    // Add null checks and use correct property names
-    if (!url) return false;
+  // Memoized filter and sort URLs for better performance
+  const filteredUrls = useMemo(() => {
+    if (!urls || !Array.isArray(urls)) return [];
 
-    const originalUrl = url.full_url || '';
-    const shortUrl = url.shortUrl || '';
-    const customUrl = url.short_url || '';
-    const searchTermLower = (searchTerm || '').toLowerCase();
+    return urls.filter(url => {
+      if (!url) return false;
 
-    const matchesSearch = originalUrl.toLowerCase().includes(searchTermLower) ||
-                         shortUrl.toLowerCase().includes(searchTermLower) ||
-                         customUrl.toLowerCase().includes(searchTermLower)
+      const originalUrl = url.full_url || '';
+      const shortUrl = url.shortUrl || '';
+      const customUrl = url.short_url || '';
+      const searchTermLower = (searchTerm || '').toLowerCase();
 
-    const matchesStatus = filterStatus === 'all' || url.status === filterStatus
+      const matchesSearch = originalUrl.toLowerCase().includes(searchTermLower) ||
+                           shortUrl.toLowerCase().includes(searchTermLower) ||
+                           customUrl.toLowerCase().includes(searchTermLower)
 
-    return matchesSearch && matchesStatus
-  }).sort((a, b) => {
-    switch (sortBy) {
-      case 'newest':
-        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-      case 'oldest':
-        return new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
-      case 'clicks':
-        return (b.clicks || 0) - (a.clicks || 0)
-      case 'alphabetical': {
-        const aUrl = a.full_url || '';
-        const bUrl = b.full_url || '';
-        return aUrl.localeCompare(bUrl)
+      const matchesStatus = filterStatus === 'all' || url.status === filterStatus
+
+      return matchesSearch && matchesStatus
+    }).sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+        case 'oldest':
+          return new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
+        case 'clicks':
+          return (b.clicks || 0) - (a.clicks || 0)
+        case 'alphabetical': {
+          const aUrl = a.full_url || '';
+          const bUrl = b.full_url || '';
+          return aUrl.localeCompare(bUrl)
+        }
+        default:
+          return 0
       }
-      default:
-        return 0
-    }
-  })
+    })
+  }, [urls, searchTerm, filterStatus, sortBy])
 
-  const handleCopy = async (shortUrl, id) => {
+  // Memoized event handlers to prevent unnecessary re-renders
+  const handleCopy = useCallback(async (shortUrl, id) => {
     try {
       await navigator.clipboard.writeText(shortUrl)
       setCopiedId(id)
       setTimeout(() => setCopiedId(null), 2000)
     } catch (error) {
-      console.error('Failed to copy:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to copy:', error)
+      }
     }
-  }
+  }, [])
 
 
 
@@ -146,7 +156,6 @@ const UserUrl = () => {
       })
     } catch {
       // Ignore errors - the main purpose is opening the URL
-      console.log('Click tracking request completed')
     }
   }
 
@@ -154,7 +163,9 @@ const UserUrl = () => {
     try {
       await dispatch(toggleFavorite(urlId)).unwrap()
     } catch (error) {
-      console.error('Failed to toggle favorite:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to toggle favorite:', error)
+      }
     }
   }
 
@@ -173,10 +184,14 @@ const UserUrl = () => {
           dispatch(getUserUrls())
         }
       } else {
-        console.error('Failed to create test link:', data.message)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Failed to create test link:', data.message)
+        }
       }
     } catch (error) {
-      console.error('Error creating test link:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error creating test link:', error)
+      }
     } finally {
       setTestLoading(false)
     }
@@ -516,4 +531,4 @@ const UserUrl = () => {
   )
 }
 
-export default UserUrl
+export default React.memo(UserUrl);

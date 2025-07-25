@@ -177,7 +177,7 @@
   }
 }
 
-/* Slow blinking animation for expiring status */
+/* Slow blinking animation for expiring status - optimized */
 @keyframes slow-blink {
   0%, 50% {
     opacity: 1;
@@ -190,84 +190,83 @@
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translate3d(0, 10px, 0);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @keyframes countUp {
   from {
-    transform: translateY(20px);
+    transform: translate3d(0, 20px, 0);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
     opacity: 1;
   }
 }
 
+/* Optimized animations with hardware acceleration */
 .animate-float {
   animation: float 6s ease-in-out infinite;
+  will-change: transform;
 }
 
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
+  will-change: opacity, transform;
 }
 
 .animate-gradient {
   background-size: 200% 200%;
   animation: gradient-shift 3s ease infinite;
+  will-change: background-position;
 }
 
 .animate-slide-up {
-  animation: slide-up 0.6s ease-out;
+  animation: slide-up 0.6s ease-out forwards;
+  will-change: transform, opacity;
 }
 
 .animate-slide-in-left {
-  animation: slide-in-left 0.6s ease-out;
+  animation: slide-in-left 0.6s ease-out forwards;
+  will-change: transform, opacity;
 }
 
 .animate-slide-in-right {
-  animation: slide-in-right 0.6s ease-out;
+  animation: slide-in-right 0.6s ease-out forwards;
+  will-change: transform, opacity;
 }
 
 .animate-scale-in {
-  animation: scale-in 0.4s ease-out;
+  animation: scale-in 0.4s ease-out forwards;
+  will-change: transform, opacity;
 }
 
 .animate-bounce-in {
-  animation: bounce-in 0.6s ease-out;
-}
-
-.animate-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: shimmer 1.5s infinite;
+  animation: bounce-in 0.6s ease-out forwards;
+  will-change: transform, opacity;
 }
 
 .animate-slow-blink {
   animation: slow-blink 2s ease-in-out infinite;
+  will-change: opacity;
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.4s ease-out;
+  animation: fadeIn 0.4s ease-out forwards;
+  will-change: transform, opacity;
 }
 
+/* Optimized shimmer animation */
 .animate-shimmer {
   animation: shimmer 2s infinite linear;
   background: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
   background-size: 200px 100%;
+  will-change: background-position;
 }
 
 .dark .animate-shimmer {
@@ -276,7 +275,8 @@
 }
 
 .animate-countUp {
-  animation: countUp 0.6s ease-out;
+  animation: countUp 0.6s ease-out forwards;
+  will-change: transform, opacity;
 }
 
 /* Smooth scrolling */
@@ -358,11 +358,13 @@ body {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
-/* Loading skeleton */
+/* Optimized loading skeleton */
 .skeleton {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+  will-change: background-position;
+  contain: layout style;
 }
 
 .dark .skeleton {
