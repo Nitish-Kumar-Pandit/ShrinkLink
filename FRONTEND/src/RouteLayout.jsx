@@ -41,9 +41,14 @@ const RootLayout = () => {
     const handleRedirect = async () => {
       const path = location.pathname
 
+      console.log('🔍 RouteLayout checking path:', path)
+
       // Check if this looks like a short URL (single path segment, no known routes)
       const pathSegments = path.split('/').filter(Boolean)
       const knownRoutes = ['auth', 'register', 'dashboard', 'analytics-demo', 'test-route', 'r']
+
+      console.log('🔍 Path segments:', pathSegments)
+      console.log('🔍 Known routes:', knownRoutes)
 
       if (pathSegments.length === 1 && !knownRoutes.includes(pathSegments[0])) {
         const shortCode = pathSegments[0]
