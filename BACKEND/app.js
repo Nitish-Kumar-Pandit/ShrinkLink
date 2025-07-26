@@ -25,7 +25,7 @@ const corsOptions = {
             'http://localhost:5173',
             'http://localhost:5174',
             'http://localhost:5175',
-            'https://shrinklink-1.onrender.com', // Your actual frontend URL
+            'https://sl.nitishh.in', // Your actual frontend URL
             'https://shrinklink-frontend.onrender.com',
             process.env.FRONTEND_URL,
             process.env.CORS_ORIGIN

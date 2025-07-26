@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Test script to verify production API endpoints
-const API_BASE = 'https://shrinklink-p8mk.onrender.com';
+const API_BASE = 'https://shrinklink-qvez.onrender.com';
 
 async function testEndpoint(endpoint, method = 'GET', body = null) {
   console.log(`\n🔄 Testing ${method} ${endpoint}`);
