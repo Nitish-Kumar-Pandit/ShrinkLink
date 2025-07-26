@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { getApiBaseUrl } from '../utils/axiosInstance.js';
 
 // Async thunk for creating short URL
 export const createShortUrl = createAsyncThunk(
@@ -14,7 +15,10 @@ export const createShortUrl = createAsyncThunk(
         requestBody.expiration = expiration;
       }
 
-      const response = await fetch('/api/create', {
+      const baseUrl = getApiBaseUrl();
+      const apiUrl = baseUrl ? `${baseUrl}/api/create` : '/api/create';
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,7 +50,10 @@ export const getUserUrls = createAsyncThunk(
   'url/getUserUrls',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/urls', {
+      const baseUrl = getApiBaseUrl();
+      const apiUrl = baseUrl ? `${baseUrl}/api/urls` : '/api/urls';
+
+      const response = await fetch(apiUrl, {
         method: 'GET',
         credentials: 'include',
       });
@@ -69,7 +76,10 @@ export const getUserStats = createAsyncThunk(
   'url/getUserStats',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/stats', {
+      const baseUrl = getApiBaseUrl();
+      const apiUrl = baseUrl ? `${baseUrl}/api/stats` : '/api/stats';
+
+      const response = await fetch(apiUrl, {
         method: 'GET',
         credentials: 'include',
       });
@@ -92,7 +102,10 @@ export const fetchAnonymousUsage = createAsyncThunk(
   'url/fetchAnonymousUsage',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/create/anonymous-usage', {
+      const baseUrl = getApiBaseUrl();
+      const apiUrl = baseUrl ? `${baseUrl}/api/create/anonymous-usage` : '/api/create/anonymous-usage';
+
+      const response = await fetch(apiUrl, {
         method: 'GET',
         credentials: 'include',
       });
@@ -115,7 +128,10 @@ export const toggleFavorite = createAsyncThunk(
   'url/toggleFavorite',
   async (urlId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`/api/create/favorite/${urlId}`, {
+      const baseUrl = getApiBaseUrl();
+      const apiUrl = baseUrl ? `${baseUrl}/api/create/favorite/${urlId}` : `/api/create/favorite/${urlId}`;
+
+      const response = await fetch(apiUrl, {
         method: 'PATCH',
         credentials: 'include',
       });

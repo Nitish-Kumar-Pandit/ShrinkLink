@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShrinkLink API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { border-color: #28a745; background: #d4edda; }
+        .error { border-color: #dc3545; background: #f8d7da; }
+        .loading { border-color: #ffc107; background: #fff3cd; }
+    </style>
+</head>
+<body>
+    <h1>🔗 ShrinkLink API Test</h1>
+    <p>Testing API endpoints for production deployment issues</p>
+
+    <div class="test-section">
+        <h2>🏥 Health Check</h2>
+        <button onclick="testHealth()">Test Health Endpoint</button>
+        <div id="health-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Anonymous Usage</h2>
+        <button onclick="testAnonymousUsage()">Test Anonymous Usage</button>
+        <div id="anonymous-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔐 Auth Check</h2>
+        <button onclick="testAuthMe()">Test Auth Me (should be 401)</button>
+        <div id="auth-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔗 Create URL</h2>
+        <input type="text" id="test-url" placeholder="Enter URL to shorten" value="https://example.com" style="width: 300px; padding: 8px; margin: 5px;">
+        <button onclick="testCreateUrl()">Test Create URL</button>
+        <div id="create-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://shrinklink-p8mk.onrender.com';
+
+        function addResult(elementId, message, type = 'loading') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+        }
+
+        async function testHealth() {
+            addResult('health-result', '🔄 Testing health endpoint...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': 'https://sl.nitishh.in'
+                    }
+                });
+                
+                const data = await response.json();
+                addResult('health-result', 
+                    `✅ Status: ${response.status}\n` +
+                    `📄 Response: ${JSON.stringify(data, null, 2)}`, 
+                    'success'
+                );
+            } catch (error) {
+                addResult('health-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAnonymousUsage() {
+            addResult('anonymous-result', '🔄 Testing anonymous usage endpoint...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/create/anonymous-usage`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': 'https://sl.nitishh.in'
+                    },
+                    credentials: 'include'
+                });
+                
+                const text = await response.text();
+                let result = `Status: ${response.status}\nRaw Response: ${text}`;
+                
+                try {
+                    const data = JSON.parse(text);
+                    result += `\nParsed JSON: ${JSON.stringify(data, null, 2)}`;
+                    addResult('anonymous-result', `✅ ${result}`, 'success');
+                } catch (e) {
+                    addResult('anonymous-result', `⚠️ ${result}\nJSON Parse Error: ${e.message}`, 'error');
+                }
+            } catch (error) {
+                addResult('anonymous-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAuthMe() {
+            addResult('auth-result', '🔄 Testing auth me endpoint...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': 'https://sl.nitishh.in'
+                    },
+                    credentials: 'include'
+                });
+                
+                const text = await response.text();
+                let result = `Status: ${response.status}\nRaw Response: ${text}`;
+                
+                try {
+                    const data = JSON.parse(text);
+                    result += `\nParsed JSON: ${JSON.stringify(data, null, 2)}`;
+                } catch (e) {
+                    result += `\nJSON Parse Error: ${e.message}`;
+                }
+                
+                addResult('auth-result', 
+                    response.status === 401 ? `✅ Expected 401: ${result}` : `⚠️ Unexpected: ${result}`, 
+                    response.status === 401 ? 'success' : 'error'
+                );
+            } catch (error) {
+                addResult('auth-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCreateUrl() {
+            const url = document.getElementById('test-url').value;
+            addResult('create-result', '🔄 Testing create URL endpoint...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': 'https://sl.nitishh.in'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ url: url })
+                });
+                
+                const text = await response.text();
+                let result = `Status: ${response.status}\nRaw Response: ${text}`;
+                
+                try {
+                    const data = JSON.parse(text);
+                    result += `\nParsed JSON: ${JSON.stringify(data, null, 2)}`;
+                    addResult('create-result', `✅ ${result}`, 'success');
+                } catch (e) {
+                    addResult('create-result', `⚠️ ${result}\nJSON Parse Error: ${e.message}`, 'error');
+                }
+            } catch (error) {
+                addResult('create-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run health check on page load
+        window.onload = () => {
+            testHealth();
+        };
+    </script>
+</body>
+</html>

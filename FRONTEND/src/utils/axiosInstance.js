@@ -5,6 +5,9 @@ import axios from "axios";
 const baseURL = import.meta.env.VITE_API_URL ||
     (import.meta.env.PROD ? "" : "http://localhost:3000");
 
+// Export the base URL for use in fetch requests
+export const getApiBaseUrl = () => baseURL;
+
 const axiosInstance = axios.create({
     baseURL: baseURL,
     withCredentials: true,

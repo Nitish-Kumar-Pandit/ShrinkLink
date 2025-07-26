@@ -8,11 +8,6 @@ import cookieParser from 'cookie-parser';
 // Load environment variables
 dotenv.config();
 
-// Set APP_URL for production if not set
-if (process.env.NODE_ENV === 'production' && !process.env.APP_URL) {
-  process.env.APP_URL = `https://${process.env.RENDER_EXTERNAL_HOSTNAME || 'localhost:10000'}`;
-}
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -21,11 +16,25 @@ const PORT = process.env.PORT || 10000;
 
 // Middleware
 app.use(cors({
-  origin: true, // Allow all origins in production
-  credentials: true
+  origin: [
+    'https://sl.nitishh.in',
+    'https://shrinklink-p8mk.onrender.com',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie']
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Debug middleware for production
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - Origin: ${req.get('Origin')} - User-Agent: ${req.get('User-Agent')?.substring(0, 50)}`);
+  next();
+});
 
 // Import API routes
 import authRoutes from './BACKEND/src/routes/auth.route.js';
@@ -52,6 +61,16 @@ app.get('/api/health', (req, res) => {
     message: 'ShrinkLink API is healthy!',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Global error handler for API routes
+app.use('/api/*', (err, req, res, next) => {
+  console.error('API Error:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
   });
 });
 
