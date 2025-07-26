@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getApiBaseUrl } from '../utils/axiosInstance.js';
+import { getApiBaseUrl } from '../../utils/axiosInstance.js';
 
 // Async thunk for creating short URL
 export const createShortUrl = createAsyncThunk(

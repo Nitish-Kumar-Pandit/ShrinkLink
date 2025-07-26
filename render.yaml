@@ -35,3 +35,11 @@ services:
         value: ShrinkLink
       - key: VITE_APP_VERSION
         value: 1.0.0
+      - key: APP_URL
+        value: https://shrinklink-p8mk.onrender.com
+      - key: FRONTEND_URL
+        value: https://sl.nitishh.in
+      - key: CORS_ORIGIN
+        value: https://sl.nitishh.in
+      - key: VITE_API_URL
+        value: https://shrinklink-p8mk.onrender.com

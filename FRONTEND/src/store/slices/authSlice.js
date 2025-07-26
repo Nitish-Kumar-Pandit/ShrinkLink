@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getApiBaseUrl } from '../utils/axiosInstance.js';
+import { getApiBaseUrl } from '../../utils/axiosInstance.js';
 
 // Async thunks for API calls
 export const loginUser = createAsyncThunk(
