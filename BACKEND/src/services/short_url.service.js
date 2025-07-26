@@ -32,11 +32,20 @@ export const shortUrlServiceWithoutUser = async (url, clientIP, expiration = '14
 }
 
 export const shortUrlServiceWithUser = async (url, userId, slug = null, expiration = '14d') => {
-    const shortUrl = slug || generateNanoId(4);
-    const exist = await getCustomUrl(slug);
-    if(exist){
-        throw new Error(`Custom URL '${slug}' already exists. Please choose a different custom URL.`);
+    let shortUrl;
+
+    if (slug) {
+        // Check if custom slug already exists
+        const exist = await getCustomUrl(slug);
+        if(exist){
+            throw new Error(`Custom URL '${slug}' already exists. Please choose a different custom URL.`);
+        }
+        shortUrl = slug;
+    } else {
+        // Generate random short URL
+        shortUrl = generateNanoId(4);
     }
+
     const expiresAt = calculateExpirationDate(expiration);
     await saveUrl(shortUrl, url, userId, null, expiresAt);
     return shortUrl;
