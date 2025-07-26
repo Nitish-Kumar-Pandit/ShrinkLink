@@ -13,6 +13,7 @@ router.post("/login", validateRateLimit, validateLogin, loginUser);
 router.post("/logout", logoutUser);
 router.get("/test-cookie", testCookie);
 router.get("/me", authmiddleware, (req, res) => {
+    console.log('GET /me endpoint hit, user:', req.user?.email);
     res.status(200).json({
         success: true,
         user: {
@@ -23,6 +24,19 @@ router.get("/me", authmiddleware, (req, res) => {
             createdAt: req.user.createdAt,
             avatarUrl: req.user.avatarUrl
         }
+    });
+});
+
+// Test endpoint to check authentication without middleware
+router.get("/test-auth", (req, res) => {
+    console.log('Test auth endpoint hit');
+    console.log('Cookies:', req.cookies);
+    console.log('Authorization header:', req.headers.authorization);
+    res.status(200).json({
+        success: true,
+        message: "Test endpoint reached",
+        cookies: req.cookies,
+        authHeader: req.headers.authorization
     });
 });
 

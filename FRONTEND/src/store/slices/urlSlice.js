@@ -18,11 +18,19 @@ export const createShortUrl = createAsyncThunk(
       const baseUrl = getApiBaseUrl();
       const apiUrl = baseUrl ? `${baseUrl}/api/create` : '/api/create';
 
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add Authorization header if token exists
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         credentials: 'include',
         body: JSON.stringify(requestBody),
       });
@@ -53,8 +61,17 @@ export const getUserUrls = createAsyncThunk(
       const baseUrl = getApiBaseUrl();
       const apiUrl = baseUrl ? `${baseUrl}/api/urls` : '/api/urls';
 
+      const headers = {};
+
+      // Add Authorization header if token exists
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch(apiUrl, {
         method: 'GET',
+        headers,
         credentials: 'include',
       });
 
@@ -79,8 +96,17 @@ export const getUserStats = createAsyncThunk(
       const baseUrl = getApiBaseUrl();
       const apiUrl = baseUrl ? `${baseUrl}/api/stats` : '/api/stats';
 
+      const headers = {};
+
+      // Add Authorization header if token exists
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch(apiUrl, {
         method: 'GET',
+        headers,
         credentials: 'include',
       });
 

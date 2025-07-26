@@ -16,10 +16,17 @@ const axiosInstance = axios.create({
     }
 });
 
-// Add request interceptor for debugging
+// Add request interceptor for debugging and auth
 axiosInstance.interceptors.request.use(
     (config) => {
         console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+
+        // Add Authorization header if token exists
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+
         return config;
     },
     (error) => {

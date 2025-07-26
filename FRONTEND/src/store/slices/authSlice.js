@@ -9,11 +9,19 @@ export const loginUser = createAsyncThunk(
       const baseUrl = getApiBaseUrl();
       const apiUrl = baseUrl ? `${baseUrl}/api/auth/login` : '/api/auth/login';
 
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add Authorization header if token exists
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
@@ -38,6 +46,11 @@ export const loginUser = createAsyncThunk(
         return rejectWithValue(data.message || 'Login failed');
       }
 
+      // Store token in localStorage for cross-origin authentication
+      if (data.token) {
+        localStorage.setItem('accessToken', data.token);
+      }
+
       return data;
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
@@ -55,11 +68,19 @@ export const registerUser = createAsyncThunk(
       const baseUrl = getApiBaseUrl();
       const apiUrl = baseUrl ? `${baseUrl}/api/auth/register` : '/api/auth/register';
 
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      // Add Authorization header if token exists
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ name, email, password }),
       });
@@ -84,6 +105,11 @@ export const registerUser = createAsyncThunk(
         return rejectWithValue(data.message || 'Registration failed');
       }
 
+      // Store token in localStorage for cross-origin authentication
+      if (data.token) {
+        localStorage.setItem('accessToken', data.token);
+      }
+
       return data;
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
@@ -104,14 +130,26 @@ export const logoutUser = createAsyncThunk(
       const baseUrl = getApiBaseUrl();
       const apiUrl = baseUrl ? `${baseUrl}/api/auth/logout` : '/api/auth/logout';
 
+      const headers = {};
+
+      // Add Authorization header if token exists
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch(apiUrl, {
         method: 'POST',
+        headers,
         credentials: 'include',
       });
 
       if (!response.ok) {
         return rejectWithValue('Logout failed');
       }
+
+      // Clear token from localStorage
+      localStorage.removeItem('accessToken');
 
       return {};
     } catch (error) {
@@ -122,8 +160,8 @@ export const logoutUser = createAsyncThunk(
 
 const initialState = {
   user: null,
-  token: null,
-  isAuthenticated: false,
+  token: localStorage.getItem('accessToken'),
+  isAuthenticated: !!localStorage.getItem('accessToken'),
   isLoading: false,
   error: null,
 };
@@ -140,6 +178,8 @@ const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
       state.error = null;
+      // Clear token from localStorage
+      localStorage.removeItem('accessToken');
     },
     setUser: (state, action) => {
       state.user = action.payload;

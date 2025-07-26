@@ -30,8 +30,7 @@ export const registerUser = async (req, res) => {
         res.cookie('accessToken', result.token, {
             ...cookieOptions,
             maxAge: 24 * 60 * 60 * 1000, // 24 hours
-            path: '/',
-            domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : 'localhost'
+            path: '/'
         });
 
         // Return user data (without password)
@@ -104,8 +103,7 @@ export const loginUser = async (req, res) => {
         res.cookie("accessToken", token, {
             ...cookieOptions,
             maxAge: 24 * 60 * 60 * 1000, // 24 hours
-            path: '/',
-            domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : 'localhost'
+            path: '/'
         });
 
         res.status(200).json({

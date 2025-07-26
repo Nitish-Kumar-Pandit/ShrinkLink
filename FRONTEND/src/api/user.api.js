@@ -14,6 +14,30 @@ export const logoutUser = async () => {
 }
 
 export const getCurrentUser = async () => {
-    const {data} = await axiosInstance.get("/api/auth/me")
-    return data;
+    try {
+        const {data} = await axiosInstance.get("/api/auth/me")
+        return data;
+    } catch (error) {
+        // If axios fails, try with fetch and Authorization header
+        const baseUrl = import.meta.env.VITE_API_URL || '';
+        const apiUrl = baseUrl ? `${baseUrl}/api/auth/me` : '/api/auth/me';
+
+        const headers = {};
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(apiUrl, {
+            method: 'GET',
+            headers,
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to get current user');
+        }
+
+        return await response.json();
+    }
 }

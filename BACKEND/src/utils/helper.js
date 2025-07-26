@@ -10,6 +10,12 @@ export const signToken = (payload) => {
 }
 
 export const verifyToken = (token) => {
-    const decoded = jsonwebtoken.verify(token, process.env.JWT_SECRET);
-    return decoded;
+    try {
+        const decoded = jsonwebtoken.verify(token, process.env.JWT_SECRET);
+        console.log('Token verified successfully for user ID:', decoded.id);
+        return decoded;
+    } catch (error) {
+        console.log('Token verification failed:', error.message);
+        throw error;
+    }
 }

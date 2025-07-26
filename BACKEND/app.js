@@ -27,6 +27,7 @@ const corsOptions = {
             'http://localhost:5175',
             'https://sl.nitishh.in', // Your actual frontend URL
             'https://shrinklink-frontend.onrender.com',
+            'https://shrinklink-frontend-latest.onrender.com',
             process.env.FRONTEND_URL,
             process.env.CORS_ORIGIN
         ].filter(Boolean); // Remove undefined values
@@ -35,7 +36,13 @@ const corsOptions = {
             callback(null, true);
         } else {
             console.log('CORS blocked origin:', origin);
-            callback(new Error('Not allowed by CORS'));
+            console.log('Allowed origins:', allowedOrigins);
+            // For now, allow all origins in production to debug
+            if (process.env.NODE_ENV === 'production') {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
         }
     },
     credentials: true,
