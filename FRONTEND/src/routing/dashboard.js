@@ -1,12 +1,18 @@
 import { createRoute } from '@tanstack/react-router'
-import { rootRoute } from './../routing/routeTree.js'
 import DashboardPage from './../pages/DashboardPage.jsx'
+
+// This will be set by the routeTree.js file
+let parentRoute = null;
+
+export const setParentRoute = (route) => {
+  parentRoute = route;
+};
 import { getCurrentUser } from '../api/user.api.js'
 import { setUser } from '../store/slices/authSlice.js'
 import { redirect } from '@tanstack/react-router'
 
 export const dashboardRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => parentRoute,
   path: '/dashboard',
   component: DashboardPage,
   beforeLoad: async ({ context }) => {

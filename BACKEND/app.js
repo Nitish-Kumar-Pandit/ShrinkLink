@@ -93,6 +93,57 @@ app.use("/api/create", short_url)
 app.get("/api/urls", getUserUrlsController)
 app.get("/api/stats", getUserStatsController)
 
+// API endpoint for frontend redirects
+app.get("/api/redirect/:shortCode", async (req, res) => {
+    try {
+        const { shortCode } = req.params;
+
+        if (!shortCode) {
+            return res.status(400).json({
+                success: false,
+                message: "Short code is required"
+            });
+        }
+
+        console.log(`🔍 API redirect request for: ${shortCode}`);
+
+        // Import the DAO function directly
+        const { getShortUrl } = await import('./src/dao/short_url.js');
+        const url = await getShortUrl(shortCode);
+
+        if (!url || !url.full_url) {
+            console.log(`❌ Short code not found: ${shortCode}`);
+            return res.status(404).json({
+                success: false,
+                message: "Short URL not found"
+            });
+        }
+
+        // Check if URL has expired
+        if (url.expiresAt && new Date() > url.expiresAt) {
+            console.log(`⏰ URL expired: ${shortCode}`);
+            return res.status(410).json({
+                success: false,
+                message: "This short URL has expired"
+            });
+        }
+
+        console.log(`✅ Returning URL for ${shortCode}: ${url.full_url}`);
+
+        res.status(200).json({
+            success: true,
+            url: url.full_url,
+            clicks: url.clicks
+        });
+    } catch (error) {
+        console.error('❌ API redirect error:', error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+});
+
 
 
 // Short URL redirect route - MUST be last to avoid conflicts with other routes

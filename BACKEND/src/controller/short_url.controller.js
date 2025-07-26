@@ -68,7 +68,11 @@ export const createShortUrl = async (req, res) => {
             shortUrl = await shortUrlServiceWithoutUser(data.url, clientIP, data.expiration);
         }
 
-        const fullShortUrl = `${process.env.APP_URL}/${shortUrl}`;
+        // Use frontend URL for short links in production, backend URL for development
+        const baseUrl = process.env.NODE_ENV === 'production'
+            ? (process.env.FRONTEND_DOMAIN || 'https://sl.nitishh.in')
+            : process.env.APP_URL;
+        const fullShortUrl = `${baseUrl}/${shortUrl}`;
 
         // Calculate status for the newly created URL
         const expiration = data.expiration || '14d'; // Default to 14 days
@@ -187,7 +191,9 @@ export const getUserUrlsController = async (req, res) => {
             id: url._id,
             full_url: url.full_url,
             short_url: url.short_url,
-            shortUrl: `${process.env.APP_URL}/${url.short_url}`,
+            shortUrl: `${process.env.NODE_ENV === 'production'
+                ? (process.env.FRONTEND_DOMAIN || 'https://sl.nitishh.in')
+                : process.env.APP_URL}/${url.short_url}`,
             clicks: url.clicks,
             createdAt: url.createdAt,
             updatedAt: url.updatedAt,

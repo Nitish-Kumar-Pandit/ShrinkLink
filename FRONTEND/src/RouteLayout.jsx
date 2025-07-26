@@ -6,6 +6,7 @@ import { useDispatch } from 'react-redux'
 import { setUser } from './store/slices/authSlice'
 import { getCurrentUser } from './api/user.api'
 import ErrorBoundary from './components/ErrorBoundary'
+import { getApiBaseUrl } from './utils/axiosInstance.js'
 
 const RootLayout = () => {
   const dispatch = useDispatch()
@@ -34,6 +35,57 @@ const RootLayout = () => {
 
     checkAuthStatus()
   }, [dispatch])
+
+  // Handle short URL redirects
+  useEffect(() => {
+    const handleRedirect = async () => {
+      const path = location.pathname
+
+      // Check if this looks like a short URL (single path segment, no known routes)
+      const pathSegments = path.split('/').filter(Boolean)
+      const knownRoutes = ['auth', 'register', 'dashboard', 'analytics-demo', 'test-route', 'r']
+
+      if (pathSegments.length === 1 && !knownRoutes.includes(pathSegments[0])) {
+        const shortCode = pathSegments[0]
+        console.log('🔍 Potential short URL detected:', shortCode)
+
+        try {
+          const baseUrl = getApiBaseUrl()
+          const apiUrl = baseUrl ? `${baseUrl}/api/redirect/${shortCode}` : `/api/redirect/${shortCode}`
+
+          console.log('🚀 Making redirect API call to:', apiUrl)
+
+          const response = await fetch(apiUrl, {
+            method: 'GET',
+            credentials: 'include',
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+
+            if (data.success && data.url) {
+              console.log('✅ Redirecting to:', data.url)
+              window.location.href = data.url
+              return
+            }
+          } else if (response.status === 404) {
+            console.log('❌ Short URL not found:', shortCode)
+            // Let the normal routing handle this (will show 404)
+          } else if (response.status === 410) {
+            console.log('⏰ Short URL expired:', shortCode)
+            // Redirect to home with error
+            window.location.href = `/?error=${encodeURIComponent('This short URL has expired')}`
+            return
+          }
+        } catch (error) {
+          console.error('❌ Redirect error:', error)
+          // Let normal routing handle this
+        }
+      }
+    }
+
+    handleRedirect()
+  }, [location.pathname])
 
   // Smooth scroll to top when route changes
   useEffect(() => {
