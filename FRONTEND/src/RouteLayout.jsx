@@ -38,6 +38,7 @@ const RootLayout = () => {
 
   // Handle short URL redirects
   useEffect(() => {
+    console.log('🔍 RouteLayout useEffect triggered')
     const handleRedirect = async () => {
       const path = location.pathname
 
