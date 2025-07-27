@@ -1,9 +1,24 @@
 import axios from "axios";
 
-// Use environment variable or fallback to local development
-// In production, VITE_API_URL will be empty, so we use relative paths
-const baseURL = import.meta.env.VITE_API_URL ||
-    (import.meta.env.PROD ? "" : "http://localhost:3000");
+// API Base URL Configuration
+// For separate backend/frontend deployment on Render
+const getBaseURL = () => {
+    // If VITE_API_URL is explicitly set, use it
+    if (import.meta.env.VITE_API_URL) {
+        return import.meta.env.VITE_API_URL;
+    }
+
+    // In production, use the backend service URL
+    if (import.meta.env.PROD) {
+        // This will be set during build or runtime
+        return import.meta.env.VITE_BACKEND_URL || '';
+    }
+
+    // In development, use local backend
+    return "http://localhost:5000";
+};
+
+const baseURL = getBaseURL();
 
 // Export the base URL for use in fetch requests
 export const getApiBaseUrl = () => baseURL;
@@ -21,6 +36,7 @@ axiosInstance.interceptors.request.use(
     (config) => {
         if (import.meta.env.DEV) {
             console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+            console.log(`🔧 Base URL: ${baseURL}`);
         }
 
         // Add Authorization header if token exists

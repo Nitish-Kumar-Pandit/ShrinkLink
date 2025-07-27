@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "vercel-build": "vite build"
+    "render-build": "vite build",
+    "start": "vite preview --port 3000"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",

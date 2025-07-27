@@ -1,0 +1,48 @@
+services:
+  # Backend Web Service
+  - type: web
+    name: shrinklink-backend
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: cd BACKEND && npm install
+    startCommand: cd BACKEND && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        value: your_super_secret_jwt_key_here_make_it_long_and_random_123456789
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        value: mongodb+srv://compilex-admin:CompileX2024@compilex.jhtzhys.mongodb.net/shrinklink?retryWrites=true&w=majority&appName=CompileX
+      - key: BCRYPT_ROUNDS
+        value: 12
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      - key: DEFAULT_URL_EXPIRY_DAYS
+        value: 365
+      - key: LOG_LEVEL
+        value: info
+      - key: HELMET_CSP_ENABLED
+        value: true
+      - key: DB_MAX_POOL_SIZE
+        value: 20
+      - key: DB_MIN_POOL_SIZE
+        value: 10
+      - key: DB_SERVER_SELECTION_TIMEOUT_MS
+        value: 5000
+      - key: DB_SOCKET_TIMEOUT_MS
+        value: 45000
+      - key: DB_MAX_IDLE_TIME_MS
+        value: 30000
+      - key: FRONTEND_URL
+        value: https://your-frontend-service.onrender.com
+      - key: CORS_ORIGIN
+        value: https://your-frontend-service.onrender.com
+      - key: APP_URL
+        value: https://your-backend-service.onrender.com
+      - key: FRONTEND_ROUTES
+        value: "auth,register,dashboard,analytics-demo,test-redirect"

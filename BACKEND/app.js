@@ -1,49 +1,53 @@
 import express from 'express';
-const app = express();
 import { nanoid } from 'nanoid';
 import dotenv from "dotenv";
-import short_url from './src/routes/short_url.route.js';
-import UrlSchema from './src/models/shorturl.model.js';
-import connectDB from './src/config/mongo.config.js';
-import auth_routes from './src/routes/auth.route.js';
-import { redirectFromShortUrl, getUserUrlsController, getUserStatsController } from './src/controller/short_url.controller.js';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Load environment variables
 dotenv.config();
 
-import cors from 'cors';
+// Import routes and controllers
+import short_url from './src/routes/short_url.route.js';
+import auth_routes from './src/routes/auth.route.js';
+import { redirectFromShortUrl, getUserUrlsController, getUserStatsController } from './src/controller/short_url.controller.js';
 import { attachUser } from './src/utils/attachUser.js';
-import cookieParser from 'cookie-parser';
+import connectDB from './src/config/mongo.config.js';
+
+const app = express();
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Connect to database first
+connectDB();
+
 // CORS configuration for both development and production
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    process.env.CORS_ORIGIN,
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:3000',
+    // Add your production frontend URLs here
+].filter(Boolean); // Remove undefined values
+
+console.log('🔧 Allowed CORS origins:', allowedOrigins);
+
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
+        // Allow requests with no origin (like mobile apps, Postman, curl)
         if (!origin) return callback(null, true);
 
-        const allowedOrigins = [
-            'http://localhost:5173',
-            'http://localhost:5174',
-            'http://localhost:5175',
-            'https://sl.nitishh.in', // Your actual frontend URL
-            'https://shrinklink-frontend.onrender.com',
-            'https://shrinklink-frontend-latest.onrender.com',
-            process.env.FRONTEND_URL,
-            process.env.CORS_ORIGIN
-        ].filter(Boolean); // Remove undefined values
-
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            console.log('CORS blocked origin:', origin);
-            console.log('Allowed origins:', allowedOrigins);
-            // For now, allow all origins in production to debug
+            console.log('❌ CORS blocked origin:', origin);
+            console.log('✅ Allowed origins:', allowedOrigins);
+            // In production, be more permissive for debugging
             if (process.env.NODE_ENV === 'production') {
                 callback(null, true);
             } else {
@@ -52,36 +56,29 @@ const corsOptions = {
         }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    exposedHeaders: ['Set-Cookie']
 };
 
 app.use(cors(corsOptions));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
-// Normalize short URL paths to lowercase for case-insensitive matching
+// Trust proxy for proper IP detection (important for Render)
+app.set('trust proxy', true);
+
+// Request logging middleware
 app.use((req, res, next) => {
-    // Only normalize single-segment paths that look like short URLs (not API routes)
-    if (req.path.match(/^\/[a-zA-Z0-9_-]{3,10}$/) && !req.path.startsWith('/api/') && !req.path.startsWith('/health')) {
-        req.url = req.url.toLowerCase();
-    }
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - Origin: ${req.get('Origin')} - IP: ${req.ip}`);
     next();
 });
 
-// Trust proxy for proper IP detection
-app.set('trust proxy', true);
-
-app.use(cookieParser());
+// Attach user middleware for authentication
 app.use(attachUser);
-
-// Serve static files from the React app build directory in production
-if (process.env.NODE_ENV === 'production') {
-    const frontendDistPath = path.join(__dirname, '../FRONTEND/dist');
-    console.log('📁 Serving static files from:', frontendDistPath);
-    app.use(express.static(frontendDistPath));
-}
 
 
 
@@ -100,10 +97,13 @@ app.get("/health", (req, res) => {
 
 
 
-app.use("/api/auth", auth_routes)
-app.use("/api/create", short_url)
-app.get("/api/urls", getUserUrlsController)
-app.get("/api/stats", getUserStatsController)
+// API Routes
+app.use("/api/auth", auth_routes);
+app.use("/api/create", short_url);
+
+// Protected routes (require authentication)
+app.get("/api/urls", attachUser, getUserUrlsController);
+app.get("/api/stats", attachUser, getUserStatsController);
 
 // API endpoint for frontend redirects
 app.get("/api/redirect/:shortCode", async (req, res) => {
@@ -158,68 +158,90 @@ app.get("/api/redirect/:shortCode", async (req, res) => {
 
 
 
-// Short URL redirect route - handle short URLs that look like short codes
-app.get("/:id", async (req, res) => {
+// Short URL redirect route - handle direct short URL access
+app.get("/:shortCode", async (req, res) => {
     try {
-        const { id } = req.params;
+        const { shortCode } = req.params;
 
-        // Check if this looks like a short URL (alphanumeric, 3-10 chars)
-        // and not a known frontend route
-        const knownRoutes = ['auth', 'register', 'dashboard', 'analytics-demo', 'test-redirect'];
+        console.log(`🔍 Direct redirect request for: ${shortCode}`);
 
-        if (knownRoutes.includes(id.toLowerCase())) {
-            // This is a frontend route, serve the React app
-            if (process.env.NODE_ENV === 'production') {
-                const frontendDistPath = path.join(__dirname, '../FRONTEND/dist');
-                return res.sendFile(path.join(frontendDistPath, 'index.html'));
-            } else {
-                return res.status(404).json({
-                    success: false,
-                    message: "Route not found in development"
-                });
-            }
+        // Skip known API routes and health check
+        if (shortCode === 'health' || shortCode.startsWith('api')) {
+            return res.status(404).json({
+                success: false,
+                message: "Route not found"
+            });
         }
 
         // Sanitize input - trim whitespace and handle URL encoding
-        const sanitizedId = decodeURIComponent(id.trim());
+        const sanitizedId = decodeURIComponent(shortCode.trim());
 
         // Import the DAO function directly
         const { getShortUrl } = await import('./src/dao/short_url.js');
         const url = await getShortUrl(sanitizedId);
 
         if (!url || !url.full_url) {
-            // If it's not a valid short URL, serve the React app in production
-            if (process.env.NODE_ENV === 'production') {
-                const frontendDistPath = path.join(__dirname, '../FRONTEND/dist');
-                return res.sendFile(path.join(frontendDistPath, 'index.html'));
-            } else {
-                return res.status(404).json({
-                    success: false,
-                    message: "Short URL not found"
-                });
-            }
-        }
-
-        res.redirect(url.full_url);
-    } catch (error) {
-        console.error('❌ Route handler error:', error);
-
-        // If there's an error, serve the React app in production
-        if (process.env.NODE_ENV === 'production') {
-            const frontendDistPath = path.join(__dirname, '../FRONTEND/dist');
-            return res.sendFile(path.join(frontendDistPath, 'index.html'));
-        } else {
-            res.status(500).json({
+            console.log(`❌ Short URL not found: ${shortCode}`);
+            return res.status(404).json({
                 success: false,
-                message: "Internal server error"
+                message: "Short URL not found",
+                shortCode: shortCode
             });
         }
+
+        // Check if URL has expired
+        if (url.expiresAt && new Date() > url.expiresAt) {
+            console.log(`⏰ Short URL expired: ${shortCode}`);
+            return res.status(410).json({
+                success: false,
+                message: "This short URL has expired",
+                shortCode: shortCode
+            });
+        }
+
+        console.log(`✅ Redirecting ${shortCode} to: ${url.full_url}`);
+
+        // Ensure the URL has proper protocol
+        let redirectUrl = url.full_url;
+        if (!redirectUrl.startsWith('http://') && !redirectUrl.startsWith('https://')) {
+            redirectUrl = 'https://' + redirectUrl;
+        }
+
+        // Perform the redirect with 301 status (permanent redirect)
+        return res.redirect(301, redirectUrl);
+
+    } catch (error) {
+        console.error('❌ Redirect error:', error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+        });
     }
 });
 
 
 
-const PORT = process.env.PORT || 3000;
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error('❌ Unhandled error:', err);
+    res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    });
+});
+
+// Handle 404 for unknown routes
+app.use('*', (req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Route not found',
+        path: req.originalUrl
+    });
+});
+
+const PORT = process.env.PORT || 5000;
 
 // Set APP_URL for production if not set
 if (process.env.NODE_ENV === 'production' && !process.env.APP_URL) {
@@ -227,8 +249,9 @@ if (process.env.NODE_ENV === 'production' && !process.env.APP_URL) {
 }
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 ShrinkLink server running on port ${PORT}`);
+    console.log(`🚀 ShrinkLink Backend API running on port ${PORT}`);
     console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔗 App URL: ${process.env.APP_URL || 'http://localhost:' + PORT}`);
-    connectDB();
+    console.log(`🔗 Backend URL: ${process.env.APP_URL || 'http://localhost:' + PORT}`);
+    console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'Not configured'}`);
+    console.log(`🗄️  MongoDB: ${process.env.MONGO_URI ? 'Configured' : 'Not configured'}`);
 });

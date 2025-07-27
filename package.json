@@ -7,13 +7,20 @@
   "scripts": {
     "setup": "node setup-env.js",
     "setup:env": "node setup-env.js",
+    "setup:render": "node setup-for-render.js",
     "build": "npm run install:all && cd FRONTEND && npm run build",
+    "build:backend": "cd BACKEND && npm install",
+    "build:frontend": "cd FRONTEND && npm install && npm run build",
     "start": "node server.js",
+    "start:backend": "cd BACKEND && npm start",
+    "start:frontend": "cd FRONTEND && npm start",
     "dev": "cd BACKEND && npm run dev",
     "dev:frontend": "cd FRONTEND && npm run dev",
     "dev:both": "concurrently \"npm run dev\" \"npm run dev:frontend\"",
     "install:all": "cd BACKEND && npm install && cd ../FRONTEND && npm install",
-    "postinstall": "npm run install:all"
+    "postinstall": "npm run install:all",
+    "test:backend": "curl http://localhost:5000/health",
+    "test:frontend": "curl http://localhost:5173"
   },
   "keywords": ["url-shortener", "render", "fullstack"],
   "author": "ShrinkLink",
