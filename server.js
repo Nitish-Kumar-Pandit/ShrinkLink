@@ -155,7 +155,8 @@ app.get('*', async (req, res) => {
     }
 
     console.log('❌ Short URL not found:', shortCode);
-    // If not found, serve React app (which will show 404 or handle it)
+    // If not found, serve React app with a 404 status
+    return res.status(404).sendFile(path.join(__dirname, 'FRONTEND/dist/index.html'));
   }
 
   // Serve React app for all other routes
