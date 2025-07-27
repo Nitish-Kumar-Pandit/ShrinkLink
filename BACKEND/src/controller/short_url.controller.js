@@ -69,7 +69,7 @@ export const createShortUrl = async (req, res) => {
         }
 
         // Use APP_URL for short links, which is defined in the production environment
-        const baseUrl = process.env.APP_URL || 'https://sl.nitishh.in';
+        const baseUrl = process.env.APP_URL || process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 3000}`;
         const fullShortUrl = `${baseUrl}/${shortUrl}`;
 
         // Calculate status for the newly created URL
@@ -186,7 +186,7 @@ export const getUserUrlsController = async (req, res) => {
 
         // Transform URLs to include full short URL and format data
         const formattedUrls = urls.map(url => {
-            const baseUrl = process.env.APP_URL || 'https://sl.nitishh.in';
+            const baseUrl = process.env.APP_URL || process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 3000}`;
             return {
                 id: url._id,
                 full_url: url.full_url,

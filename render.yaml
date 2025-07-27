@@ -31,6 +31,12 @@ services:
         value: 20
       - key: DB_MIN_POOL_SIZE
         value: 10
+      - key: DB_SERVER_SELECTION_TIMEOUT_MS
+        value: 5000
+      - key: DB_SOCKET_TIMEOUT_MS
+        value: 45000
+      - key: DB_MAX_IDLE_TIME_MS
+        value: 30000
       - key: VITE_APP_NAME
         value: ShrinkLink
       - key: VITE_APP_VERSION
@@ -43,3 +49,7 @@ services:
         value: https://sl.nitishh.in
       - key: VITE_API_URL
         value: ""
+      - key: FRONTEND_ROUTES
+        value: "auth,register,dashboard,analytics-demo,test-redirect"
+      - key: FRONTEND_DIST_PATH
+        value: "./FRONTEND/dist"

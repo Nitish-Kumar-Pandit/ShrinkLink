@@ -15,13 +15,17 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 // Middleware
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.CORS_ORIGIN,
+  process.env.APP_URL,
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000'
+].filter(Boolean); // Remove undefined values
+
 app.use(cors({
-  origin: [
-    'https://sl.nitishh.in',
-    'https://shrinklink-rsha.onrender.com',
-    'http://localhost:5173',
-    'http://localhost:3000'
-  ],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
@@ -33,6 +37,12 @@ app.use(cookieParser());
 // Debug middleware for production
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - Origin: ${req.get('Origin')} - User-Agent: ${req.get('User-Agent')?.substring(0, 50)}`);
+
+  // Add extra debugging for API calls
+  if (req.path.startsWith('/api/')) {
+    console.log(`🔍 API Call: ${req.method} ${req.path} - Body:`, req.body ? JSON.stringify(req.body).substring(0, 100) : 'none');
+  }
+
   next();
 });
 
@@ -73,7 +83,7 @@ app.get('/api/redirect/:shortCode', async (req, res) => {
     }
 
     // Check if URL is expired
-    if (url.expires_at && new Date() > new Date(url.expires_at)) {
+    if (url.expiresAt && new Date() > new Date(url.expiresAt)) {
       console.log('⏰ Short URL expired:', shortCode);
       return res.status(410).json({
         success: false,
@@ -101,7 +111,9 @@ app.get('/api/health', (req, res) => {
     success: true,
     message: 'ShrinkLink API is healthy!',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    mongoConnected: !!process.env.MONGO_URI,
+    appUrl: process.env.APP_URL || 'not set'
   });
 });
 
@@ -122,8 +134,8 @@ app.get('/api/debug/:shortCode', async (req, res) => {
       found: !!url,
       url: url ? {
         full_url: url.full_url,
-        expires_at: url.expires_at,
-        created_at: url.created_at
+        expiresAt: url.expiresAt,
+        createdAt: url.createdAt
       } : null,
       environment: process.env.NODE_ENV,
       timestamp: new Date().toISOString()
@@ -155,7 +167,7 @@ app.get('/:shortCode', async (req, res, next) => {
   const { shortCode } = req.params;
 
   // Skip known frontend routes
-  const knownFrontendRoutes = ['auth', 'register', 'dashboard', 'analytics-demo', 'test-redirect'];
+  const knownFrontendRoutes = (process.env.FRONTEND_ROUTES || 'auth,register,dashboard,analytics-demo,test-redirect').split(',');
   if (knownFrontendRoutes.includes(shortCode.toLowerCase())) {
     console.log('🔍 Frontend route detected:', shortCode);
     return next(); // Pass to catch-all route
@@ -179,12 +191,21 @@ app.get('/:shortCode', async (req, res, next) => {
     // Query database
     const url = await getShortUrl(shortCode);
     console.log('🔍 Database query result:', url ? 'FOUND' : 'NOT FOUND');
+    if (url) {
+      console.log('🔍 URL details:', {
+        full_url: url.full_url,
+        expiresAt: url.expiresAt,
+        isActive: url.isActive,
+        clicks: url.clicks
+      });
+    }
 
     if (url && url.full_url) {
       // Check expiration
-      if (url.expires_at && new Date() > new Date(url.expires_at)) {
+      if (url.expiresAt && new Date() > new Date(url.expiresAt)) {
         console.log('⏰ Short URL expired:', shortCode);
-        return res.redirect('/?error=expired');
+        const redirectUrl = process.env.FRONTEND_URL || process.env.APP_URL || '/';
+        return res.redirect(`${redirectUrl}?error=expired`);
       }
 
       console.log('✅ Redirecting', shortCode, 'to:', url.full_url);
@@ -210,16 +231,20 @@ app.get('/:shortCode', async (req, res, next) => {
 });
 
 // Serve static files from React build
-app.use(express.static(path.join(__dirname, 'FRONTEND/dist')));
+const frontendDistPath = process.env.FRONTEND_DIST_PATH || path.join(__dirname, 'FRONTEND/dist');
+app.use(express.static(frontendDistPath));
 
 // Handle React routing - serve index.html for all other routes
 app.get('*', (req, res) => {
   console.log('🔍 Catch-all route hit:', req.path);
-  res.sendFile(path.join(__dirname, 'FRONTEND/dist/index.html'));
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
 });
 
 app.listen(PORT, () => {
+  const serverUrl = process.env.APP_URL || `http://localhost:${PORT}`;
   console.log(`🚀 ShrinkLink server running on port ${PORT}`);
-  console.log(`📱 Frontend: http://localhost:${PORT}`);
-  console.log(`🔗 API: http://localhost:${PORT}/api`);
+  console.log(`📱 Frontend: ${serverUrl}`);
+  console.log(`🔗 API: ${serverUrl}/api`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🗄️  Database: ${process.env.MONGO_URI ? 'Connected' : 'Not configured'}`);
 });

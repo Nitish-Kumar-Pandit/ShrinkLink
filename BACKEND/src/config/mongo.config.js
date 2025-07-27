@@ -6,11 +6,11 @@ const connectDB = async () => {
         console.log("MongoDB URI:", process.env.MONGO_URI);
 
         await mongoose.connect(process.env.MONGO_URI, {
-            serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-            socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-            maxPoolSize: 10, // Maintain up to 10 socket connections
-            minPoolSize: 5, // Maintain a minimum of 5 socket connections
-            maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+            serverSelectionTimeoutMS: parseInt(process.env.DB_SERVER_SELECTION_TIMEOUT_MS) || 5000,
+            socketTimeoutMS: parseInt(process.env.DB_SOCKET_TIMEOUT_MS) || 45000,
+            maxPoolSize: parseInt(process.env.DB_MAX_POOL_SIZE) || 10,
+            minPoolSize: parseInt(process.env.DB_MIN_POOL_SIZE) || 5,
+            maxIdleTimeMS: parseInt(process.env.DB_MAX_IDLE_TIME_MS) || 30000,
         });
 
         // Disable buffering for immediate error feedback
