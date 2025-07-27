@@ -68,10 +68,8 @@ export const createShortUrl = async (req, res) => {
             shortUrl = await shortUrlServiceWithoutUser(data.url, clientIP, data.expiration);
         }
 
-        // Use frontend URL for short links in production, backend URL for development
-        const baseUrl = process.env.NODE_ENV === 'production'
-            ? (process.env.FRONTEND_DOMAIN || 'https://sl.nitishh.in')
-            : process.env.APP_URL;
+        // Use APP_URL for short links, which is defined in the production environment
+        const baseUrl = process.env.APP_URL || 'https://sl.nitishh.in';
         const fullShortUrl = `${baseUrl}/${shortUrl}`;
 
         // Calculate status for the newly created URL
@@ -187,20 +185,21 @@ export const getUserUrlsController = async (req, res) => {
         const urls = await getUserUrls(req.user._id);
 
         // Transform URLs to include full short URL and format data
-        const formattedUrls = urls.map(url => ({
-            id: url._id,
-            full_url: url.full_url,
-            short_url: url.short_url,
-            shortUrl: `${process.env.NODE_ENV === 'production'
-                ? (process.env.FRONTEND_DOMAIN || 'https://sl.nitishh.in')
-                : process.env.APP_URL}/${url.short_url}`,
-            clicks: url.clicks,
-            createdAt: url.createdAt,
-            updatedAt: url.updatedAt,
-            expiresAt: url.expiresAt,
-            status: url.status,
-            isFavorite: url.isFavorite || false
-        }));
+        const formattedUrls = urls.map(url => {
+            const baseUrl = process.env.APP_URL || 'https://sl.nitishh.in';
+            return {
+                id: url._id,
+                full_url: url.full_url,
+                short_url: url.short_url,
+                shortUrl: `${baseUrl}/${url.short_url}`,
+                clicks: url.clicks,
+                createdAt: url.createdAt,
+                updatedAt: url.updatedAt,
+                expiresAt: url.expiresAt,
+                status: url.status,
+                isFavorite: url.isFavorite || false
+            };
+        });
 
         // Calculate stats
         const stats = {

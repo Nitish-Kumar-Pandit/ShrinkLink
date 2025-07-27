@@ -6,6 +6,9 @@ services:
     plan: free
     buildCommand: npm install && npm run build
     startCommand: npm start
+    rewrites:
+      - source: "/*"
+        destination: "/"
     envVars:
       - key: NODE_ENV
         value: production
