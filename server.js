@@ -105,6 +105,41 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Debug endpoint for production troubleshooting
+app.get('/api/debug/:shortCode', async (req, res) => {
+  const { shortCode } = req.params;
+
+  try {
+    console.log('🔍 Debug request for short code:', shortCode);
+
+    // Import the DAO function
+    const { getShortUrl } = await import('./BACKEND/src/dao/short_url.js');
+    const url = await getShortUrl(shortCode);
+
+    res.json({
+      success: true,
+      shortCode: shortCode,
+      found: !!url,
+      url: url ? {
+        full_url: url.full_url,
+        expires_at: url.expires_at,
+        created_at: url.created_at
+      } : null,
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Debug endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      shortCode: shortCode,
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Global error handler for API routes
 app.use('/api/*', (err, req, res, next) => {
   console.error('API Error:', err);
@@ -131,10 +166,14 @@ app.get('/:shortCode', async (req, res, next) => {
   }
 
   console.log('🔍 Attempting to redirect for short code:', shortCode);
+  console.log('🔍 Environment:', process.env.NODE_ENV);
+  console.log('🔍 MongoDB URI exists:', !!process.env.MONGO_URI);
 
   try {
     const { getShortUrl } = await import('./BACKEND/src/dao/short_url.js');
+    console.log('🔍 DAO imported successfully');
     const url = await getShortUrl(shortCode);
+    console.log('🔍 Database query result:', url ? 'FOUND' : 'NOT FOUND');
 
     if (url && url.full_url) {
       // Check for expiration
