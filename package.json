@@ -20,7 +20,8 @@
     "install:all": "cd BACKEND && npm install && cd ../FRONTEND && npm install",
     "postinstall": "npm run install:all",
     "test:backend": "curl http://localhost:5000/health",
-    "test:frontend": "curl http://localhost:5173"
+    "test:frontend": "curl http://localhost:5173",
+    "test:backend:local": "node test-backend-local.js"
   },
   "keywords": ["url-shortener", "render", "fullstack"],
   "author": "ShrinkLink",

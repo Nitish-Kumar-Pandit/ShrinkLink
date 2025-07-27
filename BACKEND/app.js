@@ -232,12 +232,13 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Handle 404 for unknown routes
-app.use('*', (req, res) => {
+// Handle 404 for unknown routes (must be last)
+app.use((req, res) => {
     res.status(404).json({
         success: false,
         message: 'Route not found',
-        path: req.originalUrl
+        path: req.originalUrl,
+        method: req.method
     });
 });
 
