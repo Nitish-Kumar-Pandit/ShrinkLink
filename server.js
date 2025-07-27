@@ -150,49 +150,62 @@ app.use('/api/*', (err, req, res, next) => {
   });
 });
 
-// Dedicated route for short URL redirection
+// Short URL redirection route - handles /:shortCode
 app.get('/:shortCode', async (req, res, next) => {
   const { shortCode } = req.params;
 
-  // Basic validation to avoid treating frontend routes as short codes
+  // Skip known frontend routes
   const knownFrontendRoutes = ['auth', 'register', 'dashboard', 'analytics-demo', 'test-redirect'];
   if (knownFrontendRoutes.includes(shortCode.toLowerCase())) {
-    return next(); // Pass to the next handler (React app)
-  }
-  
-  // Avoid favicon requests
-  if (shortCode === 'favicon.ico') {
-    return res.status(204).send();
+    console.log('🔍 Frontend route detected:', shortCode);
+    return next(); // Pass to catch-all route
   }
 
-  console.log('🔍 Attempting to redirect for short code:', shortCode);
+  // Skip files with extensions
+  if (shortCode.includes('.')) {
+    console.log('🔍 File request detected:', shortCode);
+    return next();
+  }
+
+  console.log('🔍 Short URL route hit:', shortCode);
   console.log('🔍 Environment:', process.env.NODE_ENV);
   console.log('🔍 MongoDB URI exists:', !!process.env.MONGO_URI);
 
   try {
+    // Import DAO function
     const { getShortUrl } = await import('./BACKEND/src/dao/short_url.js');
     console.log('🔍 DAO imported successfully');
+
+    // Query database
     const url = await getShortUrl(shortCode);
     console.log('🔍 Database query result:', url ? 'FOUND' : 'NOT FOUND');
 
     if (url && url.full_url) {
-      // Check for expiration
+      // Check expiration
       if (url.expires_at && new Date() > new Date(url.expires_at)) {
         console.log('⏰ Short URL expired:', shortCode);
-        // Redirect to an error page on the frontend
         return res.redirect('/?error=expired');
       }
-      
+
       console.log('✅ Redirecting', shortCode, 'to:', url.full_url);
       return res.redirect(url.full_url);
     } else {
       console.log('❌ Short URL not found:', shortCode);
-      // Explicitly pass to the next handler if not found
-      return next();
+      // Return 404 for non-existent short URLs
+      return res.status(404).json({
+        success: false,
+        message: 'Short URL not found',
+        shortCode: shortCode
+      });
     }
   } catch (error) {
     console.error('❌ Error during redirection:', error);
-    return next(error); // Pass error to the global error handler
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+      shortCode: shortCode
+    });
   }
 });
 
@@ -201,6 +214,7 @@ app.use(express.static(path.join(__dirname, 'FRONTEND/dist')));
 
 // Handle React routing - serve index.html for all other routes
 app.get('*', (req, res) => {
+  console.log('🔍 Catch-all route hit:', req.path);
   res.sendFile(path.join(__dirname, 'FRONTEND/dist/index.html'));
 });
 
