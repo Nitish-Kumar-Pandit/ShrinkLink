@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 10000;
 app.use(cors({
   origin: [
     'https://sl.nitishh.in',
-    'https://shrinklink-p8mk.onrender.com',
+    'https://shrinklink-rsha.onrender.com',
     'http://localhost:5173',
     'http://localhost:3000'
   ],
@@ -115,51 +115,53 @@ app.use('/api/*', (err, req, res, next) => {
   });
 });
 
+// Dedicated route for short URL redirection
+app.get('/:shortCode', async (req, res, next) => {
+  const { shortCode } = req.params;
+
+  // Basic validation to avoid treating frontend routes as short codes
+  const knownFrontendRoutes = ['auth', 'register', 'dashboard', 'analytics-demo', 'test-redirect'];
+  if (knownFrontendRoutes.includes(shortCode.toLowerCase())) {
+    return next(); // Pass to the next handler (React app)
+  }
+  
+  // Avoid favicon requests
+  if (shortCode === 'favicon.ico') {
+    return res.status(204).send();
+  }
+
+  console.log('🔍 Attempting to redirect for short code:', shortCode);
+
+  try {
+    const { getShortUrl } = await import('./BACKEND/src/dao/short_url.js');
+    const url = await getShortUrl(shortCode);
+
+    if (url && url.full_url) {
+      // Check for expiration
+      if (url.expires_at && new Date() > new Date(url.expires_at)) {
+        console.log('⏰ Short URL expired:', shortCode);
+        // Redirect to an error page on the frontend
+        return res.redirect('/?error=expired');
+      }
+      
+      console.log('✅ Redirecting', shortCode, 'to:', url.full_url);
+      return res.redirect(url.full_url);
+    } else {
+      console.log('❌ Short URL not found:', shortCode);
+      // Explicitly pass to the next handler if not found
+      return next();
+    }
+  } catch (error) {
+    console.error('❌ Error during redirection:', error);
+    return next(error); // Pass error to the global error handler
+  }
+});
+
 // Serve static files from React build
 app.use(express.static(path.join(__dirname, 'FRONTEND/dist')));
 
-// Handle React routing - serve index.html for all non-API routes
-app.get('*', async (req, res) => {
-  // Skip API routes and short URL redirects
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ message: 'API endpoint not found' });
-  }
-
-  // Check if it's a short URL redirect (single path segment, no file extension)
-  const pathSegments = req.path.split('/').filter(Boolean);
-  const knownRoutes = ['auth', 'register', 'dashboard', 'analytics-demo', 'test-redirect'];
-
-  if (pathSegments.length === 1 && !pathSegments[0].includes('.') && !knownRoutes.includes(pathSegments[0].toLowerCase())) {
-    // This might be a short URL, try to redirect
-    const shortCode = pathSegments[0];
-    console.log('🔍 Checking short URL:', shortCode);
-
-    try {
-      // Import the DAO function directly
-      const { getShortUrl } = await import('./BACKEND/src/dao/short_url.js');
-      const url = await getShortUrl(shortCode);
-
-      if (url && url.full_url) {
-        // Check if URL is expired
-        if (url.expires_at && new Date() > new Date(url.expires_at)) {
-          console.log('⏰ Short URL expired:', shortCode);
-          // Serve React app with error parameter
-          return res.redirect(`/?error=${encodeURIComponent('This short URL has expired')}`);
-        }
-
-        console.log('✅ Redirecting', shortCode, 'to:', url.full_url);
-        return res.redirect(url.full_url);
-      }
-    } catch (error) {
-      console.error('❌ Short URL lookup error:', error);
-    }
-
-    console.log('❌ Short URL not found:', shortCode);
-    // If not found, serve React app with a 404 status
-    return res.status(404).sendFile(path.join(__dirname, 'FRONTEND/dist/index.html'));
-  }
-
-  // Serve React app for all other routes
+// Handle React routing - serve index.html for all other routes
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'FRONTEND/dist/index.html'));
 });
 
