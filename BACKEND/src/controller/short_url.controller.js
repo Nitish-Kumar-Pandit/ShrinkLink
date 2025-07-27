@@ -68,8 +68,8 @@ export const createShortUrl = async (req, res) => {
             shortUrl = await shortUrlServiceWithoutUser(data.url, clientIP, data.expiration);
         }
 
-        // Use APP_URL for short links, which is defined in the production environment
-        const baseUrl = process.env.APP_URL || process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 3000}`;
+        // Use custom domain for short links, fallback to environment variables
+        const baseUrl = process.env.SHORT_URL_DOMAIN || 'https://sl.nitishh.in' || process.env.APP_URL || process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 3000}`;
         const fullShortUrl = `${baseUrl}/${shortUrl}`;
 
         // Calculate status for the newly created URL
@@ -170,7 +170,8 @@ export const toggleFavorite = async (req, res) => {
 export const createCustomUrl = async (req, res) => {
     const {url, slug} = req.body;
     const shortUrl = await shortUrlServiceWithoutUser(url, slug);
-    res.status(200).json({shortUrl: `${process.env.APP_URL}/${shortUrl}`});
+    const baseUrl = process.env.SHORT_URL_DOMAIN || 'https://sl.nitishh.in' || process.env.APP_URL;
+    res.status(200).json({shortUrl: `${baseUrl}/${shortUrl}`});
 }
 
 export const getUserUrlsController = async (req, res) => {
@@ -186,7 +187,7 @@ export const getUserUrlsController = async (req, res) => {
 
         // Transform URLs to include full short URL and format data
         const formattedUrls = urls.map(url => {
-            const baseUrl = process.env.APP_URL || process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 3000}`;
+            const baseUrl = process.env.SHORT_URL_DOMAIN || 'https://sl.nitishh.in' || process.env.APP_URL || process.env.FRONTEND_URL || `http://localhost:${process.env.PORT || 3000}`;
             return {
                 id: url._id,
                 full_url: url.full_url,

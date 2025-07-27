@@ -47,3 +47,5 @@ services:
         value: https://your-backend-service.onrender.com
       - key: FRONTEND_ROUTES
         value: "auth,register,dashboard,analytics-demo,test-redirect"
+      - key: SHORT_URL_DOMAIN
+        value: "https://sl.nitishh.in"
