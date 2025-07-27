@@ -16,17 +16,24 @@ const RootLayout = () => {
     // Check if user is already authenticated on app load
     const checkAuthStatus = async () => {
       try {
-        console.log('Checking auth status...');
-        console.log('Token in localStorage:', localStorage.getItem('accessToken'));
+        if (import.meta.env.DEV) {
+          console.log('Checking auth status...');
+          console.log('Token in localStorage:', localStorage.getItem('accessToken'));
+        }
         const response = await getCurrentUser()
-        console.log('getCurrentUser response:', response);
+        if (import.meta.env.DEV) {
+          console.log('getCurrentUser response:', response);
+        }
         if (response.user) {
           dispatch(setUser(response.user))
-          console.log('User set in Redux store:', response.user);
+          if (import.meta.env.DEV) {
+            console.log('User set in Redux store:', response.user);
+          }
         }
       } catch (error) {
         // User is not authenticated, which is fine
-        console.log('User not authenticated:', error);
+        // Clear any invalid tokens
+        localStorage.removeItem('accessToken');
         if (process.env.NODE_ENV === 'development') {
           console.log('User not authenticated:', error.response?.status)
         }

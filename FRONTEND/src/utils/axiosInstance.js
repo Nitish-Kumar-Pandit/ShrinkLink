@@ -19,7 +19,9 @@ const axiosInstance = axios.create({
 // Add request interceptor for debugging and auth
 axiosInstance.interceptors.request.use(
     (config) => {
-        console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        if (import.meta.env.DEV) {
+            console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        }
 
         // Add Authorization header if token exists
         const token = localStorage.getItem('accessToken');
@@ -30,7 +32,9 @@ axiosInstance.interceptors.request.use(
         return config;
     },
     (error) => {
-        console.error('❌ Request Error:', error);
+        if (import.meta.env.DEV) {
+            console.error('❌ Request Error:', error);
+        }
         return Promise.reject(error);
     }
 );
@@ -38,11 +42,21 @@ axiosInstance.interceptors.request.use(
 // Add response interceptor for debugging
 axiosInstance.interceptors.response.use(
     (response) => {
-        console.log(`✅ API Response: ${response.status} ${response.config.url}`);
+        if (import.meta.env.DEV) {
+            console.log(`✅ API Response: ${response.status} ${response.config.url}`);
+        }
         return response;
     },
     (error) => {
-        console.error('❌ Response Error:', error.response?.status, error.response?.data || error.message);
+        if (import.meta.env.DEV) {
+            console.error('❌ Response Error:', error.response?.status, error.response?.data || error.message);
+        }
+
+        // Clear token on 401 errors
+        if (error.response?.status === 401) {
+            localStorage.removeItem('accessToken');
+        }
+
         return Promise.reject(error);
     }
 );

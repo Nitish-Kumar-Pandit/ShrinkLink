@@ -35,6 +35,11 @@ export const getCurrentUser = async () => {
         });
 
         if (!response.ok) {
+            // If user not found (401), clear the invalid token
+            if (response.status === 401) {
+                localStorage.removeItem('accessToken');
+                console.log('🧹 Cleared invalid token from localStorage');
+            }
             throw new Error('Failed to get current user');
         }
 
