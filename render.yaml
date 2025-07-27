@@ -4,7 +4,7 @@ services:
     name: shrinklink-app
     env: node
     plan: free
-    buildCommand: npm install && cd FRONTEND && npm install && npm run build
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -42,4 +42,4 @@ services:
       - key: CORS_ORIGIN
         value: https://sl.nitishh.in
       - key: VITE_API_URL
-        value: https://shrinklink-qvez.onrender.com
+        value: ""

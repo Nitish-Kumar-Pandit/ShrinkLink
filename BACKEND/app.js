@@ -7,6 +7,8 @@ import UrlSchema from './src/models/shorturl.model.js';
 import connectDB from './src/config/mongo.config.js';
 import auth_routes from './src/routes/auth.route.js';
 import { redirectFromShortUrl, getUserUrlsController, getUserStatsController } from './src/controller/short_url.controller.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Load environment variables
 dotenv.config();
@@ -14,6 +16,10 @@ dotenv.config();
 import cors from 'cors';
 import { attachUser } from './src/utils/attachUser.js';
 import cookieParser from 'cookie-parser';
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // CORS configuration for both development and production
 const corsOptions = {
@@ -70,6 +76,12 @@ app.set('trust proxy', true);
 app.use(cookieParser());
 app.use(attachUser);
 
+// Serve static files from the React app build directory in production
+if (process.env.NODE_ENV === 'production') {
+    const frontendDistPath = path.join(__dirname, '../FRONTEND/dist');
+    console.log('📁 Serving static files from:', frontendDistPath);
+    app.use(express.static(frontendDistPath));
+}
 
 
 
@@ -146,10 +158,27 @@ app.get("/api/redirect/:shortCode", async (req, res) => {
 
 
 
-// Short URL redirect route - MUST be last to avoid conflicts with other routes
+// Short URL redirect route - handle short URLs that look like short codes
 app.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
+
+        // Check if this looks like a short URL (alphanumeric, 3-10 chars)
+        // and not a known frontend route
+        const knownRoutes = ['auth', 'register', 'dashboard', 'analytics-demo', 'test-redirect'];
+
+        if (knownRoutes.includes(id.toLowerCase())) {
+            // This is a frontend route, serve the React app
+            if (process.env.NODE_ENV === 'production') {
+                const frontendDistPath = path.join(__dirname, '../FRONTEND/dist');
+                return res.sendFile(path.join(frontendDistPath, 'index.html'));
+            } else {
+                return res.status(404).json({
+                    success: false,
+                    message: "Route not found in development"
+                });
+            }
+        }
 
         // Sanitize input - trim whitespace and handle URL encoding
         const sanitizedId = decodeURIComponent(id.trim());
@@ -159,18 +188,32 @@ app.get("/:id", async (req, res) => {
         const url = await getShortUrl(sanitizedId);
 
         if (!url || !url.full_url) {
-            return res.status(404).json({
-                success: false,
-                message: "Short URL not found"
-            });
+            // If it's not a valid short URL, serve the React app in production
+            if (process.env.NODE_ENV === 'production') {
+                const frontendDistPath = path.join(__dirname, '../FRONTEND/dist');
+                return res.sendFile(path.join(frontendDistPath, 'index.html'));
+            } else {
+                return res.status(404).json({
+                    success: false,
+                    message: "Short URL not found"
+                });
+            }
         }
 
         res.redirect(url.full_url);
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Internal server error"
-        });
+        console.error('❌ Route handler error:', error);
+
+        // If there's an error, serve the React app in production
+        if (process.env.NODE_ENV === 'production') {
+            const frontendDistPath = path.join(__dirname, '../FRONTEND/dist');
+            return res.sendFile(path.join(frontendDistPath, 'index.html'));
+        } else {
+            res.status(500).json({
+                success: false,
+                message: "Internal server error"
+            });
+        }
     }
 });
 

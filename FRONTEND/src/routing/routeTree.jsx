@@ -9,10 +9,13 @@ import AnalyticsDemoPage from '../pages/AnalyticsDemoPage.jsx'
 import { getCurrentUser } from '../api/user.api.js'
 import { setUser } from '../store/slices/authSlice.js'
 import { redirect } from '@tanstack/react-router'
+import { getApiBaseUrl } from '../utils/axiosInstance.js'
 
 // Not found component that handles short URL redirects
 const NotFoundComponent = () => {
   const location = useLocation()
+
+  console.log('🔍 NotFoundComponent rendered with location:', location)
 
   useEffect(() => {
     const handleRedirect = async () => {
@@ -32,8 +35,9 @@ const NotFoundComponent = () => {
         console.log('🔍 Potential short URL detected:', shortCode)
 
         try {
-          const baseUrl = 'http://localhost:3000' // Use backend URL directly for development
-          const apiUrl = `${baseUrl}/api/redirect/${shortCode}`
+          // Use proper API configuration
+          const baseUrl = getApiBaseUrl()
+          const apiUrl = baseUrl ? `${baseUrl}/api/redirect/${shortCode}` : `/api/redirect/${shortCode}`
 
           console.log('🚀 Making redirect API call to:', apiUrl)
 
@@ -168,8 +172,9 @@ const ShortUrlRedirect = () => {
       }
 
       try {
-        const baseUrl = 'http://localhost:3000' // Use backend URL directly for development
-        const apiUrl = `${baseUrl}/api/redirect/${shortCode}`
+        // Use proper API configuration
+        const baseUrl = getApiBaseUrl()
+        const apiUrl = baseUrl ? `${baseUrl}/api/redirect/${shortCode}` : `/api/redirect/${shortCode}`
 
         console.log('🚀 Making redirect API call to:', apiUrl)
 
