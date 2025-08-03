@@ -162,15 +162,23 @@ app.use('/api/*', (err, req, res, next) => {
   });
 });
 
+// --- FRONTEND SERVING ---
+// Serve static files from React build first
+const frontendDistPath = process.env.FRONTEND_DIST_PATH || path.join(__dirname, 'FRONTEND/dist');
+app.use(express.static(frontendDistPath));
+
+// --- ROUTE PRIORITIZATION ---
+// Define known frontend routes to prevent them from being treated as short codes.
+const knownFrontendRoutes = (process.env.FRONTEND_ROUTES || 'auth,register,dashboard,analytics-demo,test-redirect').split(',');
+
 // Short URL redirection route - handles /:shortCode
 app.get('/:shortCode', async (req, res, next) => {
   const { shortCode } = req.params;
 
-  // Skip known frontend routes
-  const knownFrontendRoutes = (process.env.FRONTEND_ROUTES || 'auth,register,dashboard,analytics-demo,test-redirect').split(',');
-  if (knownFrontendRoutes.includes(shortCode.toLowerCase())) {
-    console.log('🔍 Frontend route detected:', shortCode);
-    return next(); // Pass to catch-all route
+  // If the path is a known frontend route, pass it to the next handler (the catch-all)
+  if (knownFrontendRoutes.includes(shortCode?.toLowerCase())) {
+    console.log('🔍 Frontend route detected, passing to SPA handler:', shortCode);
+    return next();
   }
 
   // Skip files with extensions
@@ -229,10 +237,6 @@ app.get('/:shortCode', async (req, res, next) => {
     });
   }
 });
-
-// Serve static files from React build
-const frontendDistPath = process.env.FRONTEND_DIST_PATH || path.join(__dirname, 'FRONTEND/dist');
-app.use(express.static(frontendDistPath));
 
 // Handle React routing - serve index.html for all other routes
 app.get('*', (req, res) => {
