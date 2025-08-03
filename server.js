@@ -57,12 +57,13 @@ import connectDB from './BACKEND/src/config/mongo.config.js';
 connectDB();
 
 // API Routes
+app.use('/api', attachUser); // Apply attachUser middleware to all /api routes
 app.use('/api/auth', authRoutes);
 app.use('/api/create', shortUrlRoutes);
 
 // User-specific routes (require authentication)
-app.get('/api/urls', attachUser, getUserUrlsController);
-app.get('/api/stats', attachUser, getUserStatsController);
+app.get('/api/urls', getUserUrlsController);
+app.get('/api/stats', getUserStatsController);
 
 // API endpoint for redirect (used by frontend for AJAX calls)
 app.get('/api/redirect/:shortCode', async (req, res) => {

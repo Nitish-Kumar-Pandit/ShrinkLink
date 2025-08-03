@@ -37,7 +37,7 @@ export const createShortUrl = async (req, res) => {
         }
 
         if(req.user){
-            shortUrl = await shortUrlServiceWithUser(data.url, req.user._id, data.slug, data.expiration);
+            shortUrl = await shortUrlServiceWithUser(data.url, req.user._id, data.customUrl, data.expiration);
         } else {
             // Check anonymous user limit
             let clientIP = req.ip ||
