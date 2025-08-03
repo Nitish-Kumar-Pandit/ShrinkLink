@@ -32,6 +32,7 @@ export const shortUrlServiceWithoutUser = async (url, clientIP, expiration = '14
 }
 
 export const shortUrlServiceWithUser = async (url, userId, slug = null, expiration = '14d') => {
+    console.log('🚀 ~ shortUrlServiceWithUser ~ slug:', slug)
     let shortUrl;
 
     if (slug) {
@@ -48,5 +49,6 @@ export const shortUrlServiceWithUser = async (url, userId, slug = null, expirati
 
     const expiresAt = calculateExpirationDate(expiration);
     await saveUrl(shortUrl, url, userId, null, expiresAt);
+    console.log('🚀 ~ shortUrlServiceWithUser ~ shortUrl:', shortUrl)
     return shortUrl;
 }
