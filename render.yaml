@@ -53,6 +53,3 @@ services:
         value: "auth,register,dashboard,analytics-demo,test-redirect"
       - key: FRONTEND_DIST_PATH
         value: "./FRONTEND/dist"
-    rewrites:
-      - source: "/*"
-        destination: "/"
