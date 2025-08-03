@@ -164,7 +164,7 @@ const UrlForm = () => {
         expiration // Always include expiration since it's mandatory
       };
       if (isAuthenticated && customSlug.trim()) {
-        payload.customUrl = customSlug.trim();
+        payload.customSlug = customSlug.trim();
       }
 
       await dispatch(createShortUrl(payload)).unwrap();
