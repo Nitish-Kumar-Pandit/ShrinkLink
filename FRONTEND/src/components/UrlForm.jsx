@@ -52,7 +52,6 @@ const UrlForm = () => {
   }
   const [qrGenerated, setQrGenerated] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
-  const [showQRModal, setShowQRModal] = useState(false)
   const [isFormFocused, setIsFormFocused] = useState(false)
 
   const {isAuthenticated} = useSelector((state) => state.auth)
@@ -90,7 +89,7 @@ const UrlForm = () => {
         setQrGenerated(true);
       }
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.error('Error generating QR code:', error);
       }
     }
@@ -165,7 +164,7 @@ const UrlForm = () => {
         expiration // Always include expiration since it's mandatory
       };
       if (isAuthenticated && customSlug.trim()) {
-        payload.customSlug = customSlug.trim();
+        payload.customUrl = customSlug.trim();
       }
 
       await dispatch(createShortUrl(payload)).unwrap();
