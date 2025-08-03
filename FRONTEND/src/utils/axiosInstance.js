@@ -1,20 +1,14 @@
 import axios from "axios";
 
 // API Base URL Configuration
-// For separate backend/frontend deployment on Render
 const getBaseURL = () => {
-    // If VITE_API_URL is explicitly set, use it
-    if (import.meta.env.VITE_API_URL) {
-        return import.meta.env.VITE_API_URL;
-    }
-
-    // In production, use the backend service URL
+    // In production, the API is on the same domain.
+    // An empty string makes axios use relative paths (e.g., /api/create).
     if (import.meta.env.PROD) {
-        // This will be set during build or runtime
-        return import.meta.env.VITE_BACKEND_URL || '';
+        return "";
     }
 
-    // In development, use local backend
+    // In development, use the local backend.
     return "http://localhost:5000";
 };
 
